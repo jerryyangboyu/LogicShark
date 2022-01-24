@@ -10,4 +10,4 @@ import codeeditor.codeeditor
 
 
 if __name__ == '__main__':
-    draggableicons.draggableicons.exec_main()
+    diagramscene.diagramscene.main_exec()

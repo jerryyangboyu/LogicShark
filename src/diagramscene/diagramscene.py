@@ -1,4 +1,3 @@
-
 #############################################################################
 ##
 ## Copyright (C) 2013 Riverbank Computing Limited.
@@ -42,11 +41,14 @@
 
 import math
 import sys
+import random
 
+import PySide6
+from PySide6 import QtGui, QtWidgets
 from PySide6.QtCore import (QLineF, QPointF, QRect, QRectF, QSize, QSizeF, Qt,
-                            Signal)
+                            Signal, QPoint)
 from PySide6.QtGui import (QAction, QColor, QFont, QIcon, QIntValidator,
-                           QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QBrush)
+                           QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QBrush, QPolygon)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox,
                                QFontComboBox, QGraphicsItem, QGraphicsLineItem,
                                QGraphicsPolygonItem, QGraphicsTextItem,
@@ -54,6 +56,30 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QComboBox,
                                QHBoxLayout, QLabel, QMainWindow, QMenu,
                                QMessageBox, QSizePolicy, QToolBox, QToolButton,
                                QWidget)
+
+
+def getMultipleQLine(line: QLineF) -> [QPointF]:
+    middle_x = (line.p1().x() + line.p2().x()) / 2
+    return [line.p1(), QPointF(middle_x, line.p1().y()), QPointF(middle_x, line.p2().y()), line.p2()]
+
+
+class GraphicsPathItem(QtWidgets.QGraphicsPathItem):
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        print("Local position:", event.pos())
+        print("Scene position:", event.scenePos())
+
+    def shape(self):
+        if self.path() == QtGui.QPainterPath():
+            return self.path()
+        pen = self.pen()
+        ps = QtGui.QPainterPathStroker()
+        ps.setCapStyle(pen.capStyle())
+        width = 2 * max(0.00000001, pen.widthF())
+        ps.setWidth(width)
+        ps.setJoinStyle(pen.joinStyle())
+        ps.setMiterLimit(pen.miterLimit())
+        return ps.createStroke(self.path())
 
 
 class Arrow(QGraphicsLineItem):
@@ -67,7 +93,7 @@ class Arrow(QGraphicsLineItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self._my_color = Qt.black
         self.setPen(QPen(self._my_color, 2, Qt.SolidLine,
-                Qt.RoundCap, Qt.RoundJoin))
+                         Qt.RoundCap, Qt.RoundJoin))
 
     def set_color(self, color):
         self._my_color = color
@@ -93,10 +119,14 @@ class Arrow(QGraphicsLineItem):
     def update_position(self):
         start = self.mapFromItem(self._my_start_item, 0, 0)
         end = self.mapFromItem(self._my_end_item, 0, 0)
+
+        # TODO 真的从中间开始吗？
+        print("start: ", start, " end: ", end)
+
         self.setLine(QLineF(start, end))
 
     def paint(self, painter, option, widget=None):
-        if (self._my_start_item.collidesWithItem(self._my_end_item)):
+        if self._my_start_item.collidesWithItem(self._my_end_item):
             return
 
         my_start_item = self._my_start_item
@@ -109,9 +139,14 @@ class Arrow(QGraphicsLineItem):
         painter.setBrush(self._my_color)
 
         center_line = QLineF(my_start_item.pos(), my_end_item.pos())
+
+        # TODO center line 从哪里到哪里？
+        print("center line: ", my_start_item.pos(), my_end_item.pos())
+
         end_polygon = my_end_item.polygon()
         p1 = end_polygon.at(0) + my_end_item.pos()
 
+        # find the intersection point 截取箭头的位置
         intersect_point = QPointF()
         for i in end_polygon:
             p2 = i + my_end_item.pos()
@@ -121,9 +156,11 @@ class Arrow(QGraphicsLineItem):
                 break
             p1 = p2
 
+        # 重新设置截取后的线段，方便画箭头
         self.setLine(QLineF(intersect_point, my_start_item.pos()))
-        line = self.line()
+        line: PySide6.QtCore.QLine = self.line()
 
+        # 添加箭头，重新计算线段长度
         angle = math.acos(line.dx() / line.length())
         if line.dy() >= 0:
             angle = (math.pi * 2.0) - angle
@@ -136,10 +173,15 @@ class Arrow(QGraphicsLineItem):
         arrow_p2 = line.p1() + arrow_head2
 
         self._arrow_head.clear()
+
+        # 计算出新的箭头位置
         for point in [line.p1(), arrow_p1, arrow_p2]:
             self._arrow_head.append(point)
 
-        painter.drawLine(line)
+        # 画线段和箭头
+
+        painter.drawPolyline(getMultipleQLine(line))
+
         painter.drawPolygon(self._arrow_head)
         if self.isSelected():
             painter.setPen(QPen(my_color, 1, Qt.DashLine))
@@ -199,19 +241,19 @@ class DiagramItem(QGraphicsPolygonItem):
             self._my_polygon = path.toFillPolygon()
         elif self.diagram_type == self.Conditional:
             self._my_polygon = QPolygonF([
-                    QPointF(-100, 0), QPointF(0, 100),
-                    QPointF(100, 0), QPointF(0, -100),
-                    QPointF(-100, 0)])
+                QPointF(-100, 0), QPointF(0, 100),
+                QPointF(100, 0), QPointF(0, -100),
+                QPointF(-100, 0)])
         elif self.diagram_type == self.Step:
             self._my_polygon = QPolygonF([
-                    QPointF(-100, -100), QPointF(100, -100),
-                    QPointF(100, 100), QPointF(-100, 100),
-                    QPointF(-100, -100)])
+                QPointF(-100, -100), QPointF(100, -100),
+                QPointF(100, 100), QPointF(-100, 100),
+                QPointF(-100, -100)])
         else:
             self._my_polygon = QPolygonF([
-                    QPointF(-120, -80), QPointF(-70, 80),
-                    QPointF(120, 80), QPointF(70, -80),
-                    QPointF(-120, -80)])
+                QPointF(-120, -80), QPointF(-70, 80),
+                QPointF(120, 80), QPointF(70, -80),
+                QPointF(-120, -80)])
 
         self.setPolygon(self._my_polygon)
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
@@ -255,6 +297,7 @@ class DiagramItem(QGraphicsPolygonItem):
 
 
 class DiagramScene(QGraphicsScene):
+    # python enumeration in this way
     InsertItem, InsertLine, InsertText, MoveItem = range(4)
 
     item_inserted = Signal(DiagramItem)
@@ -267,14 +310,44 @@ class DiagramScene(QGraphicsScene):
         super().__init__(parent)
 
         self._my_item_menu = itemMenu
-        self._my_mode = self.MoveItem
+
+        # TODO default mode insert line for debug
+        self._my_mode = self.InsertLine
+
         self._my_item_type = DiagramItem.Step
-        self.line = None
+        self.lineItem: QtWidgets.QGraphicsPathItem = None
+        self.lines: [QPointF] = []
         self._text_item = None
         self._my_item_color = Qt.white
         self._my_text_color = Qt.black
         self._my_line_color = Qt.black
         self._my_font = QFont()
+
+        # TODO debug default add something here
+        item1 = DiagramItem(self._my_item_type, self._my_item_menu)
+        item1.setBrush(self._my_item_color)
+        self.addItem(item1)
+        item1.setPos(QPointF(100, 100))
+        self.item_inserted.emit(item1)
+
+        item2 = DiagramItem(self._my_item_type, self._my_item_menu)
+        item2.setBrush(self._my_item_color)
+        self.addItem(item2)
+        item2.setPos(QPointF(600, 500))
+        self.item_inserted.emit(item2)
+
+        # Test line
+        # path_item = GraphicsPathItem()
+        # path_item.setPen(QtGui.QPen(QtGui.QColor("red"), 5))
+        # path = QtGui.QPainterPath()
+        # path.moveTo(0, 0)
+        #
+        # for i in range(5):
+        #     x, y = random.sample(range(300), 2)
+        #     path.lineTo(x, y)
+        #
+        # path_item.setPath(path)
+        # self.addItem(path_item)
 
     def set_line_color(self, color):
         self._my_line_color = color
@@ -326,11 +399,19 @@ class DiagramScene(QGraphicsScene):
             self.addItem(item)
             item.setPos(mouseEvent.scenePos())
             self.item_inserted.emit(item)
-        elif self._my_mode == self.InsertLine:
-            self.line = QGraphicsLineItem(QLineF(mouseEvent.scenePos(),
-                                        mouseEvent.scenePos()))
-            self.line.setPen(QPen(self._my_line_color, 2))
-            self.addItem(self.line)
+        elif self._my_mode == self.InsertLine and len(self.items(mouseEvent.scenePos())) > 0:  # 加上必须在特殊物体上才能开始画线
+            self.lines = [mouseEvent.scenePos(), mouseEvent.scenePos()]
+            path_item = GraphicsPathItem()
+            path_item.setPen(QtGui.QPen(QtGui.QColor("red"), 5))
+            path = QtGui.QPainterPath()
+            path.moveTo(self.lines[0])
+
+            for point in self.lines:
+                path.lineTo(point)
+
+            path_item.setPath(path)
+            self.lineItem = path_item
+            self.addItem(self.lineItem)
         elif self._my_mode == self.InsertText:
             text_item = DiagramTextItem()
             text_item.setFont(self._my_font)
@@ -345,25 +426,36 @@ class DiagramScene(QGraphicsScene):
 
         super(DiagramScene, self).mousePressEvent(mouseEvent)
 
-    def mouseMoveEvent(self, mouseEvent):
-        if self._my_mode == self.InsertLine and self.line:
-            new_line = QLineF(self.line.line().p1(), mouseEvent.scenePos())
-            self.line.setLine(new_line)
+    def mouseMoveEvent(self, mouseEvent: QtGui.QMouseEvent):
+        if self._my_mode == self.InsertLine and self.lineItem:
+            self.lines = getMultipleQLine(QLineF(self.lines[0], mouseEvent.scenePos()))
+            print(self.lines)
+            path = QtGui.QPainterPath()
+            path.moveTo(self.lines[0])
+            for point in self.lines:
+                path.lineTo(point)
+            self.lineItem.setPath(path)
         elif self._my_mode == self.MoveItem:
             super(DiagramScene, self).mouseMoveEvent(mouseEvent)
 
     def mouseReleaseEvent(self, mouseEvent):
-        if self.line and self._my_mode == self.InsertLine:
-            start_items = self.items(self.line.line().p1())
-            if len(start_items) and start_items[0] == self.line:
+        if self.lineItem and self._my_mode == self.InsertLine:
+            start_items = self.items(self.lines[0])  # 使用这种方法来判断这个位置有什么object
+            # start_items = self.items(self.line.line().p1())
+            if len(start_items) and start_items[0] == self.lineItem:
                 start_items.pop(0)
-            end_items = self.items(self.line.line().p2())
-            if len(end_items) and end_items[0] == self.line:
+            end_items = self.items(self.lines[-1])
+            # end_items = self.items(self.line.line().p2())
+            if len(end_items) and end_items[0] == self.lineItem:
                 end_items.pop(0)
 
-            self.removeItem(self.line)
-            self.line = None
+            self.removeItem(self.lineItem)
+            self.lineItem = None
+            self.lines = []
 
+            # 如果去除掉的Scene当中start和end都有留存item
+            # 那么看留存的第一个内容和第二个内容是不是图中节点
+            # 检查两个内容是不是都是为相同的object，自己不能连接自己
             if (len(start_items) and len(end_items) and
                     isinstance(start_items[0], DiagramItem) and
                     isinstance(end_items[0], DiagramItem) and
@@ -377,6 +469,12 @@ class DiagramScene(QGraphicsScene):
                 arrow.setZValue(-1000.0)
                 self.addItem(arrow)
                 arrow.update_position()
+
+                # TODO Test here
+                textItem = QGraphicsTextItem("start", start_item)
+                # textItem.setPos(textItem.mapFromItem(start_item, 0, 0))  # 对于scene而言start_item的坐标是什么
+                self.addItem(textItem)
+                print("The text item position is: ", textItem.pos(), textItem.mapFromItem(start_item, 0, 0))
 
         self.line = None
         super(DiagramScene, self).mouseReleaseEvent(mouseEvent)
@@ -399,7 +497,9 @@ class MainWindow(QMainWindow):
         self.create_tool_box()
 
         self.scene = DiagramScene(self._item_menu)
-        self.scene.setSceneRect(QRectF(0, 0, 5000, 5000))
+
+        # TODO change canvas width and height here
+        self.scene.setSceneRect(QRectF(0, 0, 1000, 600))
         self.scene.item_inserted.connect(self.item_inserted)
         self.scene.text_inserted.connect(self.text_inserted)
         self.scene.item_selected.connect(self.item_selected)
@@ -508,22 +608,22 @@ class MainWindow(QMainWindow):
     def text_color_changed(self):
         self._text_action = self.sender()
         self._font_color_tool_button.setIcon(self.create_color_tool_button_icon(
-                    ':/images/textpointer.png',
-                    QColor(self._text_action.data())))
+            ':/images/textpointer.png',
+            QColor(self._text_action.data())))
         self.text_button_triggered()
 
     def item_color_changed(self):
         self._fill_action = self.sender()
         self._fill_color_tool_button.setIcon(self.create_color_tool_button_icon(
-                    ':/images/floodfill.png',
-                    QColor(self._fill_action.data())))
+            ':/images/floodfill.png',
+            QColor(self._fill_action.data())))
         self.fill_button_triggered()
 
     def line_color_changed(self):
         self._line_action = self.sender()
         self._line_color_tool_button.setIcon(self.create_color_tool_button_icon(
-                    ':/images/linecolor.png',
-                    QColor(self._line_action.data())))
+            ':/images/linecolor.png',
+            QColor(self._line_action.data())))
         self.line_button_triggered()
 
     def text_button_triggered(self):
@@ -558,7 +658,7 @@ class MainWindow(QMainWindow):
 
     def about(self):
         QMessageBox.about(self, "About Diagram Scene",
-                "The <b>Diagram Scene</b> example shows use of the graphics framework.")
+                          "The <b>Diagram Scene</b> example shows use of the graphics framework.")
 
     def create_tool_box(self):
         self._button_group = QButtonGroup()
@@ -567,17 +667,17 @@ class MainWindow(QMainWindow):
 
         layout = QGridLayout()
         layout.addWidget(self.create_cell_widget("Conditional", DiagramItem.Conditional),
-                0, 0)
+                         0, 0)
         layout.addWidget(self.create_cell_widget("Process", DiagramItem.Step), 0,
-                1)
+                         1)
         layout.addWidget(self.create_cell_widget("Input/Output", DiagramItem.Io),
-                1, 0)
+                         1, 0)
 
         text_button = QToolButton()
         text_button.setCheckable(True)
         self._button_group.addButton(text_button, self.insert_text_button)
         text_button.setIcon(QIcon(QPixmap(':/images/textpointer.png')
-                            .scaled(30, 30)))
+                                  .scaled(30, 30)))
         text_button.setIconSize(QSize(50, 50))
 
         text_layout = QGridLayout()
@@ -598,13 +698,13 @@ class MainWindow(QMainWindow):
 
         background_layout = QGridLayout()
         background_layout.addWidget(self.create_background_cell_widget("Blue Grid",
-                ':/images/background1.png'), 0, 0)
+                                                                       ':/images/background1.png'), 0, 0)
         background_layout.addWidget(self.create_background_cell_widget("White Grid",
-                ':/images/background2.png'), 0, 1)
+                                                                       ':/images/background2.png'), 0, 1)
         background_layout.addWidget(self.create_background_cell_widget("Gray Grid",
-                ':/images/background3.png'), 1, 0)
+                                                                       ':/images/background3.png'), 1, 0)
         background_layout.addWidget(self.create_background_cell_widget("No Grid",
-                ':/images/background4.png'), 1, 1)
+                                                                       ':/images/background4.png'), 1, 1)
 
         background_layout.setRowStretch(2, 10)
         background_layout.setColumnStretch(2, 10)
@@ -620,38 +720,38 @@ class MainWindow(QMainWindow):
 
     def create_actions(self):
         self._to_front_action = QAction(
-                QIcon(':/images/bringtofront.png'), "Bring to &Front",
-                self, shortcut="Ctrl+F", statusTip="Bring item to front",
-                triggered=self.bring_to_front)
+            QIcon(':/images/bringtofront.png'), "Bring to &Front",
+            self, shortcut="Ctrl+F", statusTip="Bring item to front",
+            triggered=self.bring_to_front)
 
         self._send_back_action = QAction(
-                QIcon(':/images/sendtoback.png'), "Send to &Back", self,
-                shortcut="Ctrl+B", statusTip="Send item to back",
-                triggered=self.send_to_back)
+            QIcon(':/images/sendtoback.png'), "Send to &Back", self,
+            shortcut="Ctrl+B", statusTip="Send item to back",
+            triggered=self.send_to_back)
 
         self._delete_action = QAction(QIcon(':/images/delete.png'),
-                "&Delete", self, shortcut="Delete",
-                statusTip="Delete item from diagram",
-                triggered=self.delete_item)
+                                      "&Delete", self, shortcut="Delete",
+                                      statusTip="Delete item from diagram",
+                                      triggered=self.delete_item)
 
         self._exit_action = QAction("E&xit", self, shortcut="Ctrl+X",
-                statusTip="Quit Scenediagram example", triggered=self.close)
+                                    statusTip="Quit Scenediagram example", triggered=self.close)
 
         self._bold_action = QAction(QIcon(':/images/bold.png'),
-                "Bold", self, checkable=True, shortcut="Ctrl+B",
-                triggered=self.handle_font_change)
+                                    "Bold", self, checkable=True, shortcut="Ctrl+B",
+                                    triggered=self.handle_font_change)
 
         self._italic_action = QAction(QIcon(':/images/italic.png'),
-                "Italic", self, checkable=True, shortcut="Ctrl+I",
-                triggered=self.handle_font_change)
+                                      "Italic", self, checkable=True, shortcut="Ctrl+I",
+                                      triggered=self.handle_font_change)
 
         self._underline_action = QAction(
-                QIcon(':/images/underline.png'), "Underline", self,
-                checkable=True, shortcut="Ctrl+U",
-                triggered=self.handle_font_change)
+            QIcon(':/images/underline.png'), "Underline", self,
+            checkable=True, shortcut="Ctrl+U",
+            triggered=self.handle_font_change)
 
         self._about_action = QAction("A&bout", self, shortcut="Ctrl+B",
-                triggered=self.about)
+                                     triggered=self.about)
 
     def create_menus(self):
         self._file_menu = self.menuBar().addMenu("&File")
@@ -686,32 +786,32 @@ class MainWindow(QMainWindow):
         self._font_color_tool_button = QToolButton()
         self._font_color_tool_button.setPopupMode(QToolButton.MenuButtonPopup)
         self._font_color_tool_button.setMenu(
-                self.create_color_menu(self.text_color_changed, Qt.black))
+            self.create_color_menu(self.text_color_changed, Qt.black))
         self._text_action = self._font_color_tool_button.menu().defaultAction()
         self._font_color_tool_button.setIcon(
-                self.create_color_tool_button_icon(':/images/textpointer.png',
-                        Qt.black))
+            self.create_color_tool_button_icon(':/images/textpointer.png',
+                                               Qt.black))
         self._font_color_tool_button.setAutoFillBackground(True)
         self._font_color_tool_button.clicked.connect(self.text_button_triggered)
 
         self._fill_color_tool_button = QToolButton()
         self._fill_color_tool_button.setPopupMode(QToolButton.MenuButtonPopup)
         self._fill_color_tool_button.setMenu(
-                self.create_color_menu(self.item_color_changed, Qt.white))
+            self.create_color_menu(self.item_color_changed, Qt.white))
         self._fill_action = self._fill_color_tool_button.menu().defaultAction()
         self._fill_color_tool_button.setIcon(
-                self.create_color_tool_button_icon(':/images/floodfill.png',
-                        Qt.white))
+            self.create_color_tool_button_icon(':/images/floodfill.png',
+                                               Qt.white))
         self._fill_color_tool_button.clicked.connect(self.fill_button_triggered)
 
         self._line_color_tool_button = QToolButton()
         self._line_color_tool_button.setPopupMode(QToolButton.MenuButtonPopup)
         self._line_color_tool_button.setMenu(
-                self.create_color_menu(self.line_color_changed, Qt.black))
+            self.create_color_menu(self.line_color_changed, Qt.black))
         self._line_action = self._line_color_tool_button.menu().defaultAction()
         self._line_color_tool_button.setIcon(
-                self.create_color_tool_button_icon(':/images/linecolor.png',
-                        Qt.black))
+            self.create_color_tool_button_icon(':/images/linecolor.png',
+                                               Qt.black))
         self._line_color_tool_button.clicked.connect(self.line_button_triggered)
 
         self._text_tool_bar = self.addToolBar("Font")
@@ -737,7 +837,7 @@ class MainWindow(QMainWindow):
         self._pointer_type_group = QButtonGroup()
         self._pointer_type_group.addButton(pointer_button, DiagramScene.MoveItem)
         self._pointer_type_group.addButton(line_pointer_button,
-                DiagramScene.InsertLine)
+                                           DiagramScene.InsertLine)
         self._pointer_type_group.idClicked.connect(self.pointer_group_clicked)
 
         self._scene_scale_combo = QComboBox()
@@ -793,7 +893,7 @@ class MainWindow(QMainWindow):
         color_menu = QMenu(self)
         for color, name in zip(colors, names):
             action = QAction(self.create_color_icon(color), name, self,
-                    triggered=slot)
+                             triggered=slot)
             action.setData(QColor(color))
             color_menu.addAction(action)
             if color == defaultColor:
@@ -827,7 +927,7 @@ def main_exec():
     app = QApplication(sys.argv)
 
     main_window = MainWindow()
-    main_window.setGeometry(100, 100, 800, 500)
+    main_window.setGeometry(100, 100, 1500, 1000)
     main_window.show()
 
     sys.exit(app.exec())
