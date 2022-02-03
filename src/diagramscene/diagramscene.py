@@ -767,10 +767,11 @@ class MainWindow(QMainWindow):
         self._about_menu.addAction(self._about_action)
 
     def create_toolbars(self):
-        self._edit_tool_bar = self.addToolBar("Edit")
-        self._edit_tool_bar.addAction(self._delete_action)
-        self._edit_tool_bar.addAction(self._to_front_action)
-        self._edit_tool_bar.addAction(self._send_back_action)
+        # self._edit_tool_bar = self.addToolBar("Edit")
+        #
+        # self._edit_tool_bar.addAction(self._delete_action)
+        # self._edit_tool_bar.addAction(self._to_front_action)
+        # self._edit_tool_bar.addAction(self._send_back_action)
 
         self._font_combo = QFontComboBox()
         self._font_combo.currentFontChanged.connect(self.current_font_changed)
