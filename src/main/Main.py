@@ -1,54 +1,49 @@
 from PySide6.QtGui import QIcon, QPixmap, QAction
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMainWindow, QLabel, QDockWidget
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMainWindow, QLabel, QDockWidget, QGridLayout, QMenu
 from PySide6.QtCore import Qt
-from src.main import Graph, Console, Component
+from src.main import Graph, Console, Component, ToolBar
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.dockWidget = None
-        self.logoWidget = None
-        self.logoBar = None
+        # Register main widgets in run time
+        self.GraphWidget = Graph.GraphWidget()
+        self.ConsoleWidget = Console.ConsoleWidget()
+        self.ComponentWidget = Component.ComponentWidget()
+        self.ToolbarWidget = ToolBar.ToolBar()
 
-        # self.createToolBar()
+        # Register Menu and Actions
+        self.Menu = None
 
-        horizontal_layout = QHBoxLayout()
-        vertical_layout = QVBoxLayout(horizontal_layout.widget())
-        vertical_layout.addWidget(Graph.GraphWidget(horizontal_layout.widget()))
-        vertical_layout.addWidget(Console.ConsoleWidget(horizontal_layout.widget()))
+        # Set layout for main part: components, graph and console
+        # Our first attempt is the fix the position of each UI components
+        self.CoreUILayout = QGridLayout()
+        self.CoreUILayout.addWidget(self.ComponentWidget, 0, 0, 2, 1)  # row=0, column=0, rowSpan=3, columnSpan=1
+        self.CoreUILayout.addWidget(self.GraphWidget, 0, 1)  # row=0, column=1
+        self.CoreUILayout.addWidget(self.ConsoleWidget, 1, 1)  # row=1, column=1
+        self.CoreUILayout.setSpacing(10)
 
-        horizontal_layout.addWidget(Component.ComponentWidget(self))
-        horizontal_layout.addLayout(vertical_layout)
+        # Set the app layout including CoreUI and toolbar
+        self.AppLayout = QVBoxLayout()
+        self.AppLayout.addWidget(self.ToolbarWidget)
+        self.AppLayout.addLayout(self.CoreUILayout)
+        self.AppLayout.setSpacing(10)
 
-        self.mainWidget = QWidget()
-        self.mainWidget.setLayout(horizontal_layout)
-        self.setCentralWidget(self.mainWidget)
+        # Create Main Widgets from Main Layout
+        self.AppWidget = QWidget()
+        self.AppWidget.setLayout(self.AppLayout)
+        self.AppWidget.setStyleSheet("background-color: white")
 
+        # Set the default central widgets for main layout, others might be docking components
+        self.setCentralWidget(self.AppWidget)
 
-    def createToolBar(self):
-        self.logoWidget = QLabel()
-        pixelMap = QPixmap("icons:logo.jpg")
-        self.logoWidget.setPixmap(pixelMap)
+        self.createMenu()
 
-        self.dockWidget = QDockWidget()
-        self.dockWidget.setWidget(self.logoWidget)
-
-
-        # self.toolbar = self.addToolBar("logo")
-
-        # self.toolbar.addWidget(self.logoWidget)
-
-        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, self.dockWidget)
-
-
-
-        # QLabel * l = new
-        # QLabel(this);
-        # l->setPixmap(QPixmap(":/myresource.png"));
-        # toolBar->addWidget(l);
-
-        # self.logoBar.addWidget(self.logoWidget)
-
-
+    def createMenu(self):
+        self.Menu: QMenu = self.menuBar().addMenu("&About")
+        self.AboutAction = QAction("&About")
+        self.TurorialAction = QAction("Tutorial")
+        self.Menu.addAction(self.AboutAction)
+        self.Menu.addAction(self.TurorialAction)

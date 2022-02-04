@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QFrame, QWidget
 
 
 class GraphWidget(QFrame):
-    def __init__(self, parent: QWidget):
+    def __init__(self):
         super().__init__()
         self.setMinimumSize(200, 200)
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)

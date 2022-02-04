@@ -4,10 +4,10 @@ from PySide6.QtGui import QIcon
 
 
 class ConsoleWidget(QFrame):
-    def __init__(self, parent: QWidget):
+    def __init__(self):
         super().__init__()
-        self.setMinimumSize(200, 200)
-        self.setMaximumHeight(300)
+        self.setFixedHeight(200)
+        self.setMinimumWidth(200)
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
         self.setAcceptDrops(True)
         self.setStyleSheet("background-color: #00CCFF")
