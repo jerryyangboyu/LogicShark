@@ -138,6 +138,7 @@ class DragWidget(QFrame):
         drag.setHotSpot(event.position().toPoint() - child.pos())
 
         # .copy() is important: python is different than c++ in this case
+        # 在拖拽的时候给原来的图片加上阴影
         temp_pixmap = pixmap.copy()
         painter = QPainter()
         painter.begin(temp_pixmap)
@@ -147,7 +148,7 @@ class DragWidget(QFrame):
         child.setPixmap(temp_pixmap)
 
         if drag.exec(Qt.CopyAction | Qt.MoveAction, Qt.CopyAction) == Qt.MoveAction:
-            child.close()
+            child.show()
         else:
             child.show()
             child.setPixmap(pixmap)
@@ -165,3 +166,7 @@ def exec_main():
     main_widget.show()
 
     sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    exec_main()

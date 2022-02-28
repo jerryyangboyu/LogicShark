@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
 
     def createMenu(self):
         self.Menu: QMenu = self.menuBar().addMenu("&About")
-        self.AboutAction = QAction("&About")
+        self.AboutAction = QAction("Info")
         self.TurorialAction = QAction("Tutorial")
         self.Menu.addAction(self.AboutAction)
         self.Menu.addAction(self.TurorialAction)
