@@ -7,10 +7,12 @@ from PySide6.QtWidgets import QFrame, QWidget, QGraphicsScene, QGraphicsView, QL
     QGraphicsPathItem, QGraphicsSceneMouseEvent
 from TitleFrame import TitleFrame
 from src.main.Component import ComponentCore
-from src.main.DiagramItem import LogicGateItem, ANDLogicGateItem, LineItem, NodeType, SourceLogicGateItem
+from src.main.DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLogicGateItem, LineItem, \
+    SourceLogicGateItem
 
 from enum import Enum
-from src.main.DiagramItem import LogicGateType
+from src.main.ast import genSymbol, ASTGraph
+from src.main.logicTypes import LogicGateType, NodeType
 
 
 class GraphicState(Enum):
@@ -27,6 +29,24 @@ class GraphScene(QGraphicsScene):
 
         # General states
         self.state = GraphicState.MouseMove
+        self.ast = ASTGraph()
+
+        # # TODO debug line 无法连接的bug
+        # item1 = ORLogicGateItem()
+        # item2 = ANDLogicGateItem()
+        # line = LineItem(item1, NodeType.TopNode, item2, NodeType.LeftNode)
+        #
+        # self.addItem(item1)
+        # self.addItem(item2)
+        # self.addItem(line)
+
+    def removeItem(self, item: PySide6.QtWidgets.QGraphicsItem) -> None:
+        if isinstance(item, LineItem):
+            self.ast.removeRelation(item.start_item, item.end_item)
+        elif isinstance(item, LogicGateItem):
+            self.ast.removeNode(item)
+            self.ast.printRelationship()
+        super(GraphScene, self).removeItem(item)
 
     def dragEnterEvent(self, event: PySide6.QtWidgets.QGraphicsSceneDragDropEvent) -> None:
         if event.mimeData().hasFormat("application/logicgate-graph-data"):
@@ -58,16 +78,29 @@ class GraphScene(QGraphicsScene):
                 graphic_item = ANDLogicGateItem()
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
+                self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.INPUT_NODE.name:
                 # TODO
                 # assign next Name here, from A, B, C, D ...
-                graphic_item = SourceLogicGateItem("X", True)
+                graphic_item = SourceLogicGateItem(genSymbol(), True)
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
+                self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OUTPUT_NODE.name:
-                graphic_item = SourceLogicGateItem("Y", False)
+                graphic_item = SourceLogicGateItem(genSymbol(), False)
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
+                self.ast.addNode(graphic_item)
+            elif label_type == LogicGateType.OR.name:
+                graphic_item = ORLogicGateItem()
+                graphic_item.setPos(event.scenePos())
+                self.addItem(graphic_item)
+                self.ast.addNode(graphic_item)
+            elif label_type == LogicGateType.NOT.name:
+                graphic_item = NOTLogicGateItem()
+                graphic_item.setPos(event.scenePos())
+                self.addItem(graphic_item)
+                self.ast.addNode(graphic_item)
             if event.source() == self:
                 event.setDropAction(Qt.MoveAction)
                 event.accept()
@@ -79,13 +112,13 @@ class GraphScene(QGraphicsScene):
     def mousePressEvent(self, event: PySide6.QtWidgets.QGraphicsSceneMouseEvent) -> None:
         gate = self.itemAt(event.scenePos(), QTransform())
         # start connecting line
-        if gate is not None and type(gate) is ANDLogicGateItem:
+        if gate is not None and isinstance(gate, LogicGateItem):
             lean = gate.atConnectionPoint(event.scenePos())
             if lean != NodeType.NoneNode:
                 self.startPos = gate.getNodeScenePos(lean)
                 self.currentLean = lean
                 self.pathItem = QGraphicsPathItem()
-                self.pathItem.setPen(QPen(QColor("red"), 5))
+                self.pathItem.setPen(QPen(QColor(Qt.black), 5))
                 path = QPainterPath()
                 path.moveTo(self.startPos)
                 path.lineTo(self.startPos)
@@ -110,28 +143,22 @@ class GraphScene(QGraphicsScene):
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if self.state == GraphicState.InsertLine and self.pathItem is not None:
             endNode = self.itemAt(event.scenePos(), QTransform())
-
             # if node is LogicGate & valid connect node then create new line
-            if endNode is not None:
-                print(endNode, type(endNode) is SourceLogicGateItem)
-
-                if type(endNode) == ANDLogicGateItem:
-                    nodeType = endNode.atConnectionPoint(event.scenePos())
-                    if nodeType is not NodeType.NoneNode \
-                            and LineItem.isValidConnection(self.currentLean, nodeType):
-                        startNode = self.itemAt(self.startPos, QTransform())
+            if isinstance(endNode, LogicGateItem):
+                # TODO 这里有个bug就是有时候会连不上子node，但是属于corner cases，请日后完善测试注意输出 @Qiren Dong
+                print("inputCheck", endNode, self.currentLean.isInputNode())
+                print("outputCheck", endNode, self.currentLean.isOutputNode())
+                nodeType = endNode.atConnectionPoint(event.scenePos())
+                if nodeType is not NodeType.NoneNode \
+                        and LineItem.isValidConnection(self.currentLean, nodeType):
+                    startNode = self.itemAt(self.startPos, QTransform())
+                    if isinstance(startNode, LogicGateItem):
                         newLineItem = LineItem(startNode, self.currentLean, endNode, nodeType)
                         self.addItem(newLineItem)
-                elif type(endNode) is SourceLogicGateItem:
-                    # TODO 这里有个bug就是有时候会连不上子node，但是属于corner cases，请日后完善测试注意输出 @Qiren Dong
-                    print("inputCheck", endNode.isInputNode and self.currentLean.isInputNode())
-                    print("outputCheck", not endNode.isInputNode and self.currentLean.isOutputNode())
-                    if (endNode.isInputNode and self.currentLean.isInputNode()) \
-                            or (not endNode.isInputNode and self.currentLean.isOutputNode()):
-                        print("constructing line")
-                        startNode = self.itemAt(self.startPos, QTransform())
-                        newLineItem = LineItem(startNode, self.currentLean, endNode, NodeType.SourceNode)
-                        self.addItem(newLineItem)
+                        self.ast.addRelation(startNode, self.currentLean, endNode, nodeType)
+                        self.ast.printRelationship()
+                        newLineItem.show()
+                        print("is new item in the scene: ", newLineItem in self.items())
 
             # remove old temp line
             self.removeItem(self.pathItem)
