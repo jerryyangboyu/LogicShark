@@ -144,3 +144,24 @@ class ASTGraph:
                     if self.distToSource[w] == -1:
                         q.append(self.G.adjList[w])
                         self.distToSource[w] = self.distToSource[v.node_id] + 1
+
+    # TODO @Qiren Dong, to check whether the graph contains correct expression
+    def checkValid(self) -> bool:
+        # write your code here
+        return True
+
+    # TODO @Qiren Dong, generate list of expressions from the graph
+    # Note that a graph main contain multiple AST trees, so list of results should be returned
+    def toExpressions(self) -> List[str]:
+        return []
+
+    # TODO @Qiren Dong, generate This graph from a expression, [Optional]
+    # The graph may only contain one tree
+    # This static method returns a ASTGraph object to CoreUI module
+    @staticmethod
+    def fromExpression(self, expression: str):
+        return ASTGraph()
+
+
+
+
