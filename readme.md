@@ -2,6 +2,7 @@
 - Python      - 3.8.9 (compatible from python 3.6-3.10)
 - pyside6     - 6.2.2
 - pyInstaller - 4.8
+- PyEDA       - 0.26.0
 
 ## Installation
 1. Create local virtual environment
