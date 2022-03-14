@@ -1,7 +1,7 @@
 from random import randint
 from typing import List
 
-from src.main.logicTypes import LogicGateItem, LogicGateType, NodeType
+from logicTypes import LogicGateItem, LogicGateType, NodeType
 
 node_id: int = 0
 
@@ -17,10 +17,11 @@ def genSymbol():
     return chr(ord('A') + h % 26)
 
 
-class LogicSymbolNode:
-    def __init__(self, nodeId: int, symbolType):
+class LogicSymbolNode(LogicGateItem):
+    def __init__(self, nodeId: int, symbolType, label=None):
         self.node_id = nodeId
         self.symbol_type = symbolType
+        self.label = symbolType.name if label is None else label
 
         # if AND, OR gate, then we have both left and right child
         # if not gate, then only leftChild
@@ -36,9 +37,9 @@ class ASTGraph:
     def __init__(self):
         self.adjList: List[LogicSymbolNode] = []
 
-    def addNode(self, item):
+    def addNode(self, item: LogicGateItem, label=None):
         item_id = item.node_id
-        newNode = LogicSymbolNode(item_id, LogicGateType[item.symbolName])
+        newNode = LogicSymbolNode(item_id, LogicGateType[item.symbolName], label)
         # if id exceed, then expand the list
         # note that id increase linearly, so it won't cost much memory
         if item_id >= len(self.adjList):
@@ -118,6 +119,8 @@ class ASTGraph:
         for root in roots:
             SearchPaths.bfs(root)
 
+        self.toExpressions()
+
     class BreathFirstSearchPaths:
         def __init__(self, G):
             self.distToSource = [-1 for i in range(len(G.adjList))]
@@ -132,7 +135,7 @@ class ASTGraph:
                 if self.current_height + 1 == self.distToSource[v.node_id]:
                     print()
                     self.current_height += 1
-                print("[%d, %s]" % (v.node_id, v.symbol_type.name), end="")
+                print("[%d, %s]" % (v.node_id, v.label), end="")
 
                 if v.leftChild != -1:
                     w = v.leftChild
@@ -150,10 +153,44 @@ class ASTGraph:
         # write your code here
         return True
 
-    # TODO @Qiren Dong, generate list of expressions from the graph
-    # Note that a graph main contain multiple AST trees, so list of results should be returned
     def toExpressions(self) -> List[str]:
-        return []
+        results = []
+        roots = self.findRoot()
+        for root in roots:
+            op1 = self.adjList[root.leftChild]
+            results.append(root.label + " = " + self.into(op1))
+        return results
+
+    def findRoot(self):
+        roots = []
+        for e1 in self.adjList:
+            if e1 is None:
+                continue
+            isRoot = True
+            for e2 in self.adjList:
+                if e2 is None:
+                    continue
+                if e1.node_id == e2.leftChild or e1.node_id == e2.rightChild:
+                    isRoot = False
+            if isRoot:
+                roots.append(e1)
+        return roots
+
+    def into(self, n: LogicSymbolNode) -> str:
+        res = ""
+        if n.symbol_type == LogicGateType.NOT:
+            if n.leftChild != -1:
+                return n.label + " (" + self.into(self.adjList[n.leftChild]) + ") "
+            else:
+                raise Exception("Invalid Expression")
+        if n.leftChild != -1:
+            leftChild = self.adjList[n.leftChild]
+            res += self.into(leftChild)
+        res += (" " + str(n.label) + " ")
+        if n.rightChild != -1:
+            rightChild = self.adjList[n.rightChild]
+            res += self.into(rightChild)
+        return res
 
     # TODO @Qiren Dong, generate This graph from a expression, [Optional]
     # The graph may only contain one tree

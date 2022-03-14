@@ -5,6 +5,7 @@ from typing import Protocol
 class LogicGateItem(Protocol):
     node_id: int
     symbolName: str
+    label: str = ""
 
 
 class LogicGateType(Enum):

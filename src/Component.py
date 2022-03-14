@@ -3,7 +3,7 @@ from PySide6.QtGui import Qt, QPainter, QColor, QDrag
 from PySide6.QtWidgets import QWidget, QGridLayout, QLabel
 from TitleFrame import TitleFrame
 
-from src.main.DiagramItem import ANDLogicGateItem, SourceLogicGateItem, ORLogicGateItem, NOTLogicGateItem
+from DiagramItem import ANDLogicGateItem, SourceLogicGateItem, ORLogicGateItem, NOTLogicGateItem
 
 
 class ComponentCore(QWidget, QObject):

@@ -13,7 +13,7 @@ class ToolBar(QFrame):
         self.setFixedHeight(80)
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
         self.setAcceptDrops(True)
-        self.setStyleSheet("background-color: white;")
+        self.setStyleSheet("background-color: white; color: black")
 
         # Declare Components
         self.LogoWidget = self.createLogoWidget()

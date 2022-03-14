@@ -1,7 +1,9 @@
-from PySide6.QtGui import QIcon, QPixmap, QAction
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMainWindow, QLabel, QDockWidget, QGridLayout, QMenu
-from PySide6.QtCore import Qt
-from src.main import Graph, Console, Component, ToolBar
+import sys
+
+import PySide6
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QGridLayout, QMenu, QApplication
+from src import ToolBar, Component, Graph, Console
 
 
 class MainWindow(QMainWindow):
@@ -47,3 +49,16 @@ class MainWindow(QMainWindow):
         self.TurorialAction = QAction("Tutorial")
         self.Menu.addAction(self.AboutAction)
         self.Menu.addAction(self.TurorialAction)
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+
+    PySide6.QtCore.QDir.addSearchPath("icons", "resources")
+
+    main_widget = MainWindow()
+
+    main_widget.setWindowTitle("Logic Shark")
+    main_widget.show()
+
+    sys.exit(app.exec())

@@ -1,18 +1,15 @@
-from typing import Type
-
 import PySide6
-from PySide6.QtCore import Qt, QByteArray, QDataStream, QPoint, QIODevice, QPointF, QLineF
-from PySide6.QtGui import QPixmap, QTransform, QPainterPath, QPen, QColor
-from PySide6.QtWidgets import QFrame, QWidget, QGraphicsScene, QGraphicsView, QLabel, QGraphicsLineItem, \
-    QGraphicsPathItem, QGraphicsSceneMouseEvent
+from PySide6.QtCore import Qt, QByteArray, QPoint
+from PySide6.QtGui import QTransform, QPainterPath, QPen, QColor
+from PySide6.QtWidgets import QFrame, QGraphicsScene, QGraphicsView, QGraphicsPathItem, QGraphicsSceneMouseEvent
 from TitleFrame import TitleFrame
-from src.main.Component import ComponentCore
-from src.main.DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLogicGateItem, LineItem, \
+from Component import ComponentCore
+from DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLogicGateItem, LineItem, \
     SourceLogicGateItem
 
 from enum import Enum
-from src.main.ast import genSymbol, ASTGraph
-from src.main.logicTypes import LogicGateType, NodeType
+from ast import genSymbol, ASTGraph
+from logicTypes import LogicGateType, NodeType
 
 
 class GraphicState(Enum):
@@ -85,12 +82,12 @@ class GraphScene(QGraphicsScene):
                 graphic_item = SourceLogicGateItem(genSymbol(), True)
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
-                self.ast.addNode(graphic_item)
+                self.ast.addNode(graphic_item, label=graphic_item.label)
             elif label_type == LogicGateType.OUTPUT_NODE.name:
                 graphic_item = SourceLogicGateItem(genSymbol(), False)
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
-                self.ast.addNode(graphic_item)
+                self.ast.addNode(graphic_item, label=graphic_item.label)
             elif label_type == LogicGateType.OR.name:
                 graphic_item = ORLogicGateItem()
                 graphic_item.setPos(event.scenePos())
@@ -156,7 +153,12 @@ class GraphScene(QGraphicsScene):
                         newLineItem = LineItem(startNode, self.currentLean, endNode, nodeType)
                         self.addItem(newLineItem)
                         self.ast.addRelation(startNode, self.currentLean, endNode, nodeType)
-                        self.ast.printRelationship()
+
+
+                        # self.ast.printRelationship()
+
+                        print(self.ast.toExpressions())
+
                         newLineItem.show()
                         print("is new item in the scene: ", newLineItem in self.items())
 

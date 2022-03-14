@@ -7,8 +7,8 @@ from PySide6.QtGui import QColor, QPainter, QPainterPathStroker, QPainterPath, Q
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QLabel, \
     QGraphicsTextItem, QMenu
 
-from src.main.ast import genNodeId
-from src.main.logicTypes import LogicGateType, NodeType
+from ast import genNodeId
+from logicTypes import LogicGateType, NodeType
 
 line_width = 3.6
 
@@ -255,7 +255,7 @@ class ANDLogicGateItem(LogicGateItem):
     # TODO DEBUG: when mouse hover from right top side for left node, it do not turn active
     def hoverEnterEvent(self, event: PySide6.QtWidgets.QGraphicsSceneHoverEvent) -> None:
         lean = ANDLogicGateItem.atConnectionPoint(self, event.scenePos())
-        print("hover enter with lean: ", lean)
+        # print("hover enter with lean: ", lean)
         if lean == NodeType.LeftNode:
             self.leftNodeColor = self.activeNodeColor
         elif lean == NodeType.RightNode:
@@ -450,7 +450,7 @@ class ORLogicGateItem(LogicGateItem):
     # TODO DEBUG: when mouse hover from right top side for left node, it do not turn active
     def hoverEnterEvent(self, event: PySide6.QtWidgets.QGraphicsSceneHoverEvent) -> None:
         lean = self.atConnectionPoint(event.scenePos())
-        print("hover enter with lean: ", lean)
+        # print("hover enter with lean: ", lean)
         if lean == NodeType.LeftNode:
             self.leftNodeColor = self.activeNodeColor
         elif lean == NodeType.RightNode:
