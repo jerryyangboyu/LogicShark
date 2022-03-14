@@ -8,8 +8,8 @@ from DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLog
     SourceLogicGateItem
 
 from enum import Enum
-from ast import genSymbol, ASTGraph
-from logicTypes import LogicGateType, NodeType
+from ASTNode import genSymbol, ASTGraph
+from LogicTypes import LogicGateType, NodeType
 
 
 class GraphicState(Enum):

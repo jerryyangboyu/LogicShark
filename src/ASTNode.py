@@ -1,7 +1,7 @@
 from random import randint
 from typing import List
 
-from logicTypes import LogicGateItem, LogicGateType, NodeType
+from LogicTypes import LogicGateItem, LogicGateType, NodeType
 
 node_id: int = 0
 

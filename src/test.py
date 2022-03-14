@@ -1,5 +1,5 @@
-from ast import ASTGraph, genNodeId
-from logicTypes import NodeType, LogicGateItem, LogicGateType
+from ASTNode import ASTGraph, genNodeId
+from LogicTypes import NodeType, LogicGateItem, LogicGateType
 
 
 class DummyLogicGateItem(LogicGateItem):

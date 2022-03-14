@@ -7,8 +7,8 @@ from PySide6.QtGui import QColor, QPainter, QPainterPathStroker, QPainterPath, Q
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QLabel, \
     QGraphicsTextItem, QMenu
 
-from ast import genNodeId
-from logicTypes import LogicGateType, NodeType
+from ASTNode import genNodeId
+from LogicTypes import LogicGateType, NodeType
 
 line_width = 3.6
 

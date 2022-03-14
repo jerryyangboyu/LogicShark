@@ -3,7 +3,7 @@ import sys
 import PySide6
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QGridLayout, QMenu, QApplication
-from src import ToolBar, Component, Graph, Console
+import ToolBar, Component, Graph, Console
 
 
 class MainWindow(QMainWindow):
