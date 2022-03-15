@@ -70,7 +70,7 @@ class LogicGateItem(QGraphicsPathItem):
         self.setSelected(True)
 
         contextMenu = QMenu()
-        deleteAction = QAction(QIcon('icons:delete.png'), "&Delete")
+        deleteAction = QAction(QIcon('src/resources/delete.png'), "&Delete")
         deleteAction.triggered.connect(self.deleteItems)
         deleteAction.setShortcut(QKeySequence.Delete)
         deleteAction.setStatusTip("Delete item from diagram")
@@ -489,6 +489,8 @@ class ORLogicGateItem(LogicGateItem):
             return self.mapToScene(10 - self.width / 2, 65 - self.height / 2)
         elif nodeType == NodeType.TopNode:
             return self.mapToScene(110 - self.width / 2, 50 - self.height / 2)
+        else:
+            raise Exception("Invalid Node Type")
 
 
 class NOTLogicGateItem(LogicGateItem):

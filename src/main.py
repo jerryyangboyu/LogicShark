@@ -1,6 +1,7 @@
 import sys
 
 import PySide6
+from PySide6.QtCore import QDir
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QGridLayout, QMenu, QApplication
 import ToolBar, Component, Graph, Console
@@ -43,6 +44,9 @@ class MainWindow(QMainWindow):
 
         self.createMenu()
 
+        self.ToolbarWidget.ClearScreenCommand.connect(self.clearScreenCommand)
+        self.GraphWidget.OnGraphFinished.connect(self.handleGraphFinished)
+
     def createMenu(self):
         self.Menu: QMenu = self.menuBar().addMenu("&About")
         self.AboutAction = QAction("Info")
@@ -50,15 +54,21 @@ class MainWindow(QMainWindow):
         self.Menu.addAction(self.AboutAction)
         self.Menu.addAction(self.TurorialAction)
 
+    def clearScreenCommand(self):
+        self.GraphWidget.ClearScreenSignal.emit()
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    def handleGraphFinished(self, exprs):
+        print("new exprs here", exprs)
 
-    PySide6.QtCore.QDir.addSearchPath("icons", "resources")
 
-    main_widget = MainWindow()
+app = QApplication(sys.argv)
 
-    main_widget.setWindowTitle("Logic Shark")
-    main_widget.show()
+# QDir.addSearchPath("icons", QDir("./resources").absolutePath())
+# print(QDir("./resources").absolutePath())
 
-    sys.exit(app.exec())
+main_widget = MainWindow()
+
+main_widget.setWindowTitle("Logic Shark")
+main_widget.show()
+
+sys.exit(app.exec())

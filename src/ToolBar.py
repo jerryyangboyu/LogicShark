@@ -1,11 +1,15 @@
-from PySide6.QtCore import QSize, QRect
+from PySide6.QtCore import QSize, QRect, Signal, QDir
 from PySide6.QtGui import QIcon, QPixmap, Qt
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QFrame, QToolButton, QLabel, QPushButton, \
     QSizePolicy, QGroupBox
+from Graph import GraphScene
 
 
 class ToolBar(QFrame):
+
+    ClearScreenCommand = Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -18,7 +22,7 @@ class ToolBar(QFrame):
         # Declare Components
         self.LogoWidget = self.createLogoWidget()
         self.GraphButtonGroup = ToolBar.createGraphButtonGroup()
-        self.FunctionButtonGroup = ToolBar.createFunctionButtonGroup()
+        self.FunctionButtonGroup = self.createFunctionButtonGroup()
 
         # Create Layout
         self.ToolbarLayout = QHBoxLayout()
@@ -40,8 +44,7 @@ class ToolBar(QFrame):
         GroupBox.setLayout(GroupBoxLayout)
         return GroupBox
 
-    @staticmethod
-    def createFunctionButtonGroup():
+    def createFunctionButtonGroup(self):
         GroupBox = QGroupBox()
         GroupBox.setTitle("Functions")
         GroupBoxLayout = QHBoxLayout()
@@ -49,13 +52,23 @@ class ToolBar(QFrame):
         GroupBoxLayout.addWidget(QPushButton("DNF"))
         GroupBoxLayout.addWidget(QPushButton("Simplify"))
         GroupBoxLayout.addWidget(QPushButton("Custom"))
-        GroupBoxLayout.addWidget(QPushButton("Clear"))
+        GroupBoxLayout.addWidget(self.createClearButton())
         GroupBox.setLayout(GroupBoxLayout)
         return GroupBox
 
+    def createClearButton(self):
+        btn = QPushButton("Clear")
+        btn.clicked.connect(self.handleClear)
+        return btn
+
+    def handleClear(self):
+        print("btn clicked")
+        self.ClearScreenCommand.emit()
+
     def createLogoWidget(self):
         logoWidget = QLabel()
-        pixelMap = QPixmap("icons:logo.jpg")
+
+        pixelMap = QPixmap("src/resources/logo.jpg")
 
         w = min(pixelMap.width(), self.maximumWidth())
         h = min(pixelMap.height(), self.maximumHeight() - 20)

@@ -196,7 +196,7 @@ class ASTGraph:
     # The graph may only contain one tree
     # This static method returns a ASTGraph object to CoreUI module
     @staticmethod
-    def fromExpression(self, expression: str):
+    def fromExpression(expression: str):
         return ASTGraph()
 
 

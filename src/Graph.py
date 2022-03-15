@@ -1,5 +1,7 @@
+from typing import List
+
 import PySide6
-from PySide6.QtCore import Qt, QByteArray, QPoint
+from PySide6.QtCore import Qt, QByteArray, QPoint, Signal
 from PySide6.QtGui import QTransform, QPainterPath, QPen, QColor
 from PySide6.QtWidgets import QFrame, QGraphicsScene, QGraphicsView, QGraphicsPathItem, QGraphicsSceneMouseEvent
 from TitleFrame import TitleFrame
@@ -17,8 +19,10 @@ class GraphicState(Enum):
 
 
 class GraphScene(QGraphicsScene):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+
         # InsertLine states
         self.pathItem = None
         self.startPos = None
@@ -27,6 +31,27 @@ class GraphScene(QGraphicsScene):
         # General states
         self.state = GraphicState.MouseMove
         self.ast = ASTGraph()
+
+        alg = ANDLogicGateItem()
+        alg.setPos(0, 0)
+
+        org = ORLogicGateItem()
+        org.setPos(0, 100)
+
+        orgT = ORLogicGateItem()
+        orgT.setPos(150, 50)
+
+        T = SourceLogicGateItem("Y", isInputNode=False)
+        T.setPos(250, 50)
+
+        self.addItem(alg)
+        self.addItem(org)
+        self.addItem(orgT)
+        self.addItem(T)
+
+        self.drawNewLine(T, NodeType.INSourceNode, orgT, NodeType.TopNode)
+        self.drawNewLine(orgT, NodeType.LeftNode, alg, NodeType.TopNode)
+        self.drawNewLine(orgT, NodeType.RightNode, org, NodeType.TopNode)
 
         # # TODO debug line 无法连接的bug
         # item1 = ORLogicGateItem()
@@ -150,17 +175,8 @@ class GraphScene(QGraphicsScene):
                         and LineItem.isValidConnection(self.currentLean, nodeType):
                     startNode = self.itemAt(self.startPos, QTransform())
                     if isinstance(startNode, LogicGateItem):
-                        newLineItem = LineItem(startNode, self.currentLean, endNode, nodeType)
-                        self.addItem(newLineItem)
-                        self.ast.addRelation(startNode, self.currentLean, endNode, nodeType)
-
-
-                        # self.ast.printRelationship()
-
-                        print(self.ast.toExpressions())
-
-                        newLineItem.show()
-                        print("is new item in the scene: ", newLineItem in self.items())
+                        self.drawNewLine(startNode, self.currentLean, endNode, nodeType)
+                        self.connectLogicLine(startNode, self.currentLean, endNode, nodeType)
 
             # remove old temp line
             self.removeItem(self.pathItem)
@@ -170,14 +186,70 @@ class GraphScene(QGraphicsScene):
             self.state = GraphicState.MouseMove
         super(GraphScene, self).mouseReleaseEvent(event)
 
+    def connectLogicLine(self, s, l1, e, l2):
+        # self.ast.addRelation(s, l1, e, l2)
+        exprs = self.ast.toExpressions()
+        if len(exprs) != 0:
+            self.parent.postGraphFinished(exprs)
+        print(self.parent, exprs)
+
+    def drawNewLine(self, s, l1, e, l2):
+        newLineItem = LineItem(s, l1, e, l2)
+        self.addItem(newLineItem)
+        newLineItem.show()
+        print("is new item in the scene: ", newLineItem in self.items())
+
+    def drawGraph(self, expr: str):
+        self.clear()
+        self.ast = ASTGraph.fromExpression(expr)
+        root = self.ast.findRoot().pop()
+
+        q = [root]
+        distToSource = [] * len(self.ast.adjList)
+        distToSource[root.node_id] = 0
+        while len(q) != 0:
+            v = q.pop(0)
+            if self.current_height + 1 == self.distToSource[v.node_id]:
+                print()
+                self.current_height += 1
+            print("[%d, %s]" % (v.node_id, v.label), end="")
+
+            if v.leftChild != -1:
+                w = v.leftChild
+                if self.distToSource[w] == -1:
+                    q.append(self.G.adjList[w])
+                    self.distToSource[w] = self.distToSource[v.node_id] + 1
+            if v.rightChild != -1:
+                w = v.rightChild
+                if self.distToSource[w] == -1:
+                    q.append(self.G.adjList[w])
+                    self.distToSource[w] = self.distToSource[v.node_id] + 1
+
+
 
 class GraphWidget(TitleFrame):
+    ClearScreenSignal = Signal()
+    DrawGraphSignal = Signal(str)
+    OnGraphFinished = Signal(object)
+
     def __init__(self):
         super().__init__("GRAPH")
         self.setMinimumSize(200, 400)
         self.setAcceptDrops(True)
         self.setStyleSheet("background-color: white")
 
-        self.GraphScene = GraphScene()
+        self.GraphScene = GraphScene(self)
         self.GraphicView = QGraphicsView(self.GraphScene)
         self.addChildWidget(self.GraphicView)
+
+        self.ClearScreenSignal.connect(self.handleClearScreen)
+        self.DrawGraphSignal.connect(self.handleDrawSignal)
+
+    def handleDrawSignal(self, expr: str):
+        self.GraphScene.drawGraph(expr)
+
+    def handleClearScreen(self):
+        self.GraphScene.clear()
+
+    def postGraphFinished(self, exprs: List[str]):
+        self.OnGraphFinished.emit(exprs)
