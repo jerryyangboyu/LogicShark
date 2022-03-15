@@ -1,48 +1,28 @@
 # Defines methods functions for CNF, DNF and SIMPLIFY operations
-from pyeda.inter import *
 
+from sympy.logic.boolalg import to_cnf
+from sympy.logic.boolalg import to_dnf
+from sympy.logic import simplify_logic
+from sympy.abc import A, B, C, D, E, F, G, H, I, J, K, L, M, N, \
+    O, P, Q, R, S, T, U, V, W, X, Y, Z
 
 # cnf(String) -> String
 def cnf(inputExpr):
-    temp1 = inputExpr.replace('^', '&')
-    expression = expr(temp1, simplify=False)
-    temp = expression.to_cnf()
-    if len(str(temp)) == 1:
-        return str(temp)
-    return string_replacement(temp.to_unicode())
+    temp = inputExpr.replace('^', '&')
+    return to_cnf(temp, simplify=True)
 
 
 # dnf(String) -> String
 def dnf(inputExpr):
-    temp1 = inputExpr.replace('^', '&')
-    expression = expr(temp1, simplify=False)
-    temp = expression.to_dnf()
-    if len(str(temp)) == 1:
-        return str(temp)
-    return string_replacement(temp.to_unicode())
+    temp = inputExpr.replace('^', '&')
+    return to_dnf(temp, simplify=True)
 
 
 # simplify(String) -> String
 def simplify(inputExpr):
-    temp1 = inputExpr.replace('^', '&')
-    temp = expr(temp1, simplify=True)
-    if len(str(temp)) == 1:
-        return str(temp)
-    return string_replacement(temp.to_unicode())
+    temp = inputExpr.replace('^', '&')
+    return simplify_logic(temp)
 
-
-def string_replacement(temp):
-    temp = temp.replace('·', 'and')  # replace for AND
-    temp = temp.replace('+', 'or')  # replace for OR
-
-    # replace for NOT
-    lst = list(temp)
-    for i in range(0, len(lst)):
-        if lst[i] == '′':
-            lst[i], lst[i - 1] = lst[i - 1], lst[i]
-    temp2 = ''.join(lst)
-    result = temp2.replace('′', 'not ')
-    return result
 
 # test
 # print("1 : ", cnf('A ^ B | C'))
@@ -57,3 +37,5 @@ def string_replacement(temp):
 # print('10', cnf('A ^ ~B | (B ^ (~C | A))'))
 # print('11', simplify('A ^ ~B | (B ^ (~C | A))'))
 # print('12', cnf('W | ((X | ~Y) ^ (Z ^ Y))'))
+# print('13', dnf('W | ((X | ~Y) ^ (Z ^ Y))'))
+# print('14', simplify('W | ((X | ~Y) ^ (Z ^ Y))'))
