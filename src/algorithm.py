@@ -1,7 +1,6 @@
 # Defines methods functions for CNF, DNF and SIMPLIFY operations
 from pyeda.inter import *
 
-
 # cnf(String) -> String
 def cnf(inputExpr):
     temp1 = inputExpr.replace('^', '&')
@@ -9,17 +8,20 @@ def cnf(inputExpr):
     temp = expression.to_cnf()
     if len(str(temp)) == 1:
         return str(temp)
-    return string_replacement(temp.to_unicode())
+    infixExpr = temp.to_unicode()
+    print("INN", infixExpr)
+    return string_replacement(infixExpr)
 
 
 # dnf(String) -> String
 def dnf(inputExpr):
     temp1 = inputExpr.replace('^', '&')
     expression = expr(temp1, simplify=False)
-    temp = expression.to_dnf()
-    if len(str(temp)) == 1:
-        return str(temp)
-    return string_replacement(temp.to_unicode())
+    res = expression.to_dnf()
+    if len(str(res)) == 1:
+        return str(res)
+    infixExpr = res.to_unicode()
+    return string_replacement(infixExpr)
 
 
 # simplify(String) -> String
@@ -32,8 +34,8 @@ def simplify(inputExpr):
 
 
 def string_replacement(temp):
-    temp = temp.replace('·', 'and')  # replace for AND
-    temp = temp.replace('+', 'or')  # replace for OR
+    temp = temp.replace('·', '&')  # replace for AND
+    temp = temp.replace('+', '|')  # replace for OR
 
     # replace for NOT
     lst = list(temp)
@@ -41,7 +43,7 @@ def string_replacement(temp):
         if lst[i] == '′':
             lst[i], lst[i - 1] = lst[i - 1], lst[i]
     temp2 = ''.join(lst)
-    result = temp2.replace('′', 'not ')
+    result = temp2.replace('′', '~ ')
     return result
 
 # test
@@ -57,3 +59,5 @@ def string_replacement(temp):
 # print('10', cnf('A ^ ~B | (B ^ (~C | A))'))
 # print('11', simplify('A ^ ~B | (B ^ (~C | A))'))
 # print('12', cnf('W | ((X | ~Y) ^ (Z ^ Y))'))
+# print('13', dnf('W | ((X | ~Y) ^ (Z ^ Y))'))
+# print('14', simplify('W | ((X | ~Y) ^ (Z ^ Y))'))
