@@ -1,50 +1,28 @@
 # Defines methods functions for CNF, DNF and SIMPLIFY operations
-from pyeda.inter import *
+
+from sympy.logic.boolalg import to_cnf
+from sympy.logic.boolalg import to_dnf
+from sympy.logic import simplify_logic
+from sympy.abc import A, B, C, D, E, F, G, H, I, J, K, L, M, N, \
+    O, P, Q, R, S, T, U, V, W, X, Y, Z
 
 # cnf(String) -> String
 def cnf(inputExpr):
-    temp1 = inputExpr.replace('^', '&')
-    expression = expr(temp1, simplify=False)
-    temp = expression.to_cnf()
-    if len(str(temp)) == 1:
-        return str(temp)
-    infixExpr = temp.to_unicode()
-    print("INN", infixExpr)
-    return string_replacement(infixExpr)
+    temp = inputExpr.replace('^', '&')
+    return to_cnf(temp, simplify=True)
 
 
 # dnf(String) -> String
 def dnf(inputExpr):
-    temp1 = inputExpr.replace('^', '&')
-    expression = expr(temp1, simplify=False)
-    res = expression.to_dnf()
-    if len(str(res)) == 1:
-        return str(res)
-    infixExpr = res.to_unicode()
-    return string_replacement(infixExpr)
+    temp = inputExpr.replace('^', '&')
+    return to_dnf(temp, simplify=True)
 
 
 # simplify(String) -> String
 def simplify(inputExpr):
-    temp1 = inputExpr.replace('^', '&')
-    temp = expr(temp1, simplify=True)
-    if len(str(temp)) == 1:
-        return str(temp)
-    return string_replacement(temp.to_unicode())
+    temp = inputExpr.replace('^', '&')
+    return simplify_logic(temp)
 
-
-def string_replacement(temp):
-    temp = temp.replace('·', '&')  # replace for AND
-    temp = temp.replace('+', '|')  # replace for OR
-
-    # replace for NOT
-    lst = list(temp)
-    for i in range(0, len(lst)):
-        if lst[i] == '′':
-            lst[i], lst[i - 1] = lst[i - 1], lst[i]
-    temp2 = ''.join(lst)
-    result = temp2.replace('′', '~ ')
-    return result
 
 # test
 # print("1 : ", cnf('A ^ B | C'))
