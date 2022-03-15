@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, QRect
+from PySide6.QtCore import QSize, QRect, Signal
 from PySide6.QtGui import QIcon, QPixmap, Qt
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QFrame, QToolButton, QLabel, QPushButton, \
@@ -8,6 +8,9 @@ from algorithm import cnf, dnf, simplify
 
 
 class ToolBar(QFrame):
+
+    ClearScreenCommand = Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -15,12 +18,12 @@ class ToolBar(QFrame):
         self.setFixedHeight(80)
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
         self.setAcceptDrops(True)
-        self.setStyleSheet("background-color: white; color: black")
+        self.setStyleSheet("background-color: white")
 
         # Declare Components
         self.LogoWidget = self.createLogoWidget()
         self.GraphButtonGroup = ToolBar.createGraphButtonGroup()
-        self.FunctionButtonGroup = ToolBar.createFunctionButtonGroup()
+        self.FunctionButtonGroup = self.createFunctionButtonGroup()
 
         # Create Layout
         self.ToolbarLayout = QHBoxLayout()
@@ -54,8 +57,7 @@ class ToolBar(QFrame):
         return GroupBox
 
 
-    @staticmethod
-    def createFunctionButtonGroup():
+    def createFunctionButtonGroup(self):
         GroupBox = QGroupBox()
         GroupBox.setTitle("Functions")
         GroupBoxLayout = QHBoxLayout()
@@ -72,11 +74,11 @@ class ToolBar(QFrame):
         GroupBox.setLayout(GroupBoxLayout)
 
         # Button signal handling
-        button5.clicked.connect(ToolBar.clickedCNFButton)
-        button6.clicked.connect(ToolBar.clickedDNFButton)
-        button7.clicked.connect(ToolBar.clickedSimplifyButton)
-        button8.clicked.connect(ToolBar.clickedCustomButton)
-        button9.clicked.connect(ToolBar.clickedClearButton)
+        button5.clicked.connect(self.clickedCNFButton)
+        button6.clicked.connect(self.clickedDNFButton)
+        button7.clicked.connect(self.clickedSimplifyButton)
+        button8.clicked.connect(self.clickedCustomButton)
+        button9.clicked.connect(self.clickedClearButton)
         return GroupBox
 
 
@@ -105,11 +107,11 @@ class ToolBar(QFrame):
         print("CUSTOM")
 
     def clickedClearButton(self):
-        print('CLEAR')
+        self.ClearScreenCommand.emit()
 
     def createLogoWidget(self):
         logoWidget = QLabel()
-        pixelMap = QPixmap("icons:logo.jpg")
+        pixelMap = QPixmap("src/resources/logo.jpg")
 
         w = min(pixelMap.width(), self.maximumWidth())
         h = min(pixelMap.height(), self.maximumHeight() - 20)

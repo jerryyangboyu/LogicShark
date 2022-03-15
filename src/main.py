@@ -1,10 +1,12 @@
 import sys
 
-import PySide6
-from PySide6.QtCore import QDir
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QGridLayout, QMenu, QApplication
-import ToolBar, Component, Graph, Console
+
+import Component
+import Console
+import Graph
+import ToolBar
 
 
 class MainWindow(QMainWindow):
@@ -37,7 +39,7 @@ class MainWindow(QMainWindow):
         # Create Main Widgets from Main Layout
         self.AppWidget = QWidget()
         self.AppWidget.setLayout(self.AppLayout)
-        self.AppWidget.setStyleSheet("background-color: white")
+        # self.AppWidget.setStyleSheet("background-color: white")
 
         # Set the default central widgets for main layout, others might be docking components
         self.setCentralWidget(self.AppWidget)

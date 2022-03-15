@@ -6,6 +6,7 @@ from sympy.logic import simplify_logic
 from sympy.abc import A, B, C, D, E, F, G, H, I, J, K, L, M, N, \
     O, P, Q, R, S, T, U, V, W, X, Y, Z
 
+
 # cnf(String) -> String
 def cnf(inputExpr):
     temp = inputExpr.replace('^', '&')
