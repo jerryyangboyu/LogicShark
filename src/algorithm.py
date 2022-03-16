@@ -9,27 +9,38 @@ from sympy.abc import A, B, C, D, E, F, G, H, I, J, K, L, M, N, \
 
 # cnf(String) -> String
 def cnf(inputExpr):
-    temp = inputExpr.replace('^', '&')
-    return to_cnf(temp, simplify=True)
+    return convertToExpr(to_cnf(convertFromExpr(inputExpr), simplify=False))
 
 
 # dnf(String) -> String
 def dnf(inputExpr):
-    temp = inputExpr.replace('^', '&')
-    return to_dnf(temp, simplify=True)
+    return convertToExpr(to_dnf(convertFromExpr(inputExpr), simplify=False))
 
 
 # simplify(String) -> String
 def simplify(inputExpr):
-    temp = inputExpr.replace('^', '&')
-    return simplify_logic(temp)
+    return convertToExpr(simplify_logic(convertToExpr(inputExpr)))
+
+
+def convertFromExpr(s: str):
+    return s
+    # return s.replace("AND", "^") \
+    #     .replace("OR", "|") \
+    #     .replace("NOT", "~")
+
+
+def convertToExpr(s: str):
+    return s
+    # return s.replace("^", "AND") \
+    #     .replace("|", "OR") \
+    #     .replace("~", "NOT")
 
 
 # test
-# print("1 : ", cnf('A ^ B | C'))
-# print("2 : ", dnf('A ^ B | C'))
+print("1 : ", cnf('A & B | C'))
+print("2 : ", dnf('A & B | C'))
 # print("3 : ", simplify('A ^ B | C'))
-# print("4 : ", cnf('A ^ (A | C) | (C | ~B)'))
+# print("4 : ", cnf('A AND (A OR C) | (C OR NOT B)'))
 # print("5 : ", simplify('A ^ (A | C) | (C | ~B)'))
 # print('6', cnf('((~A ^ B) | (C | D)) | ((D & ~C) | (~A | ~B))'))
 # print('7', dnf('((~A ^ B) | (C | D)) | ((D & ~C) | (~A | ~B))'))

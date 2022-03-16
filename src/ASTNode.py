@@ -1,5 +1,5 @@
 from random import randint
-from typing import List
+from typing import List, Tuple
 
 from LogicTypes import LogicGateItem, LogicGateType, NodeType
 
@@ -17,11 +17,22 @@ def genSymbol():
     return chr(ord('A') + h % 26)
 
 
+def genOpLabel(symbolType: LogicGateType):
+    if symbolType == LogicGateType.AND:
+        return "&"
+    elif symbolType == LogicGateType.OR:
+        return "|"
+    elif symbolType == LogicGateType.NOT:
+        return "~"
+    else:
+        return symbolType.name
+
+
 class LogicSymbolNode(LogicGateItem):
     def __init__(self, nodeId: int, symbolType, label=None):
         self.node_id = nodeId
         self.symbol_type = symbolType
-        self.label = symbolType.name if label is None else label
+        self.label = genOpLabel(symbolType) if label is None else label
 
         # important: used to trace ui
         self.parent = []
@@ -160,13 +171,15 @@ class ASTGraph:
         # write your code here
         return True
 
-    def toExpressions(self) -> List[str]:
-        results = []
+    def toExpressions(self) -> Tuple[List[str], List[str]]:
+        exprs = []
+        labels = []
         roots = self.findRoot()
         for root in roots:
             op1 = self.adjList[root.leftChild]
-            results.append(root.label + " = " + self.into(op1))
-        return results
+            labels.append(root.label)
+            exprs.append(self.into(op1))
+        return exprs, labels
 
     def findRoot(self):
         roots = []
@@ -187,16 +200,22 @@ class ASTGraph:
         res = ""
         if n.symbol_type == LogicGateType.NOT:
             if n.leftChild != -1:
-                return n.label + " (" + self.into(self.adjList[n.leftChild]) + ") "
+                return n.label + "(" + self.into(self.adjList[n.leftChild]) + ")"
             else:
                 raise Exception("Invalid Expression")
         if n.leftChild != -1:
             leftChild = self.adjList[n.leftChild]
-            res += self.into(leftChild)
-        res += (" " + str(n.label) + " ")
+            if leftChild.leftChild == -1 and leftChild.rightChild == -1:
+                res += self.into(leftChild)
+            else:
+                res += "(" + self.into(leftChild) + ")"
+        res += " " + str(n.label) + " "
         if n.rightChild != -1:
             rightChild = self.adjList[n.rightChild]
-            res += self.into(rightChild)
+            if rightChild.leftChild == -1 and rightChild.rightChild == -1:
+                res += self.into(rightChild)
+            else:
+                res += "(" + self.into(rightChild) + ")"
         return res
 
     # TODO @Qiren Dong, generate This graph from a expression, [Optional]

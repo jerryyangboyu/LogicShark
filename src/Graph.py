@@ -12,6 +12,7 @@ from DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLog
 from enum import Enum
 from ASTNode import genSymbol, ASTGraph
 from LogicTypes import LogicGateType, NodeType
+from src.algorithm import dnf, cnf, simplify
 
 
 class GraphicState(Enum):
@@ -65,6 +66,13 @@ class GraphScene(QGraphicsScene):
         self.ast.addRelation(org, NodeType.RightNode, S3, NodeType.TopNode)
 
         self.drawGraph()
+
+        exprs, labels = self.ast.toExpressions()
+        print("Label is: ", labels[0])
+        print("Expression is: ", exprs[0])
+        print("The dnf form is: ", dnf(exprs[0]))
+        print("The cnf form is: ", cnf(exprs[0]))
+        print("It can simplify as: ", simplify(exprs[0]))
 
         # self.addItem(alg)
         # self.addItem(org)
