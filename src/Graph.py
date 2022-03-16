@@ -33,25 +33,47 @@ class GraphScene(QGraphicsScene):
         self.ast = ASTGraph()
 
         alg = ANDLogicGateItem()
-        alg.setPos(0, 0)
-
+        # alg.setPos(0, 0)
+        #
         org = ORLogicGateItem()
-        org.setPos(0, 100)
-
+        # org.setPos(0, 100)
+        #
         orgT = ORLogicGateItem()
-        orgT.setPos(150, 50)
-
+        # orgT.setPos(150, 50)
+        #
         T = SourceLogicGateItem("Y", isInputNode=False)
-        T.setPos(250, 50)
+        # T.setPos(250, 50)
 
-        self.addItem(alg)
-        self.addItem(org)
-        self.addItem(orgT)
-        self.addItem(T)
+        S1 = SourceLogicGateItem("S1", isInputNode=True)
+        S2 = SourceLogicGateItem("S2", isInputNode=True)
+        S3 = SourceLogicGateItem("S3", isInputNode=True)
 
-        self.drawNewLine(T, NodeType.INSourceNode, orgT, NodeType.TopNode)
-        self.drawNewLine(orgT, NodeType.LeftNode, alg, NodeType.TopNode)
-        self.drawNewLine(orgT, NodeType.RightNode, org, NodeType.TopNode)
+        self.ast.addNode(alg)
+        self.ast.addNode(org)
+        self.ast.addNode(orgT)
+        self.ast.addNode(T)
+        self.ast.addNode(S1)
+        self.ast.addNode(S2)
+        self.ast.addNode(S3)
+
+        self.ast.addRelation(T, NodeType.LeftNode, orgT, NodeType.TopNode)
+        self.ast.addRelation(orgT, NodeType.LeftNode, alg, NodeType.TopNode)
+        self.ast.addRelation(orgT, NodeType.RightNode, org, NodeType.TopNode)
+        self.ast.addRelation(alg, NodeType.LeftNode, S1, NodeType.TopNode)
+        self.ast.addRelation(alg, NodeType.RightNode, S2, NodeType.TopNode)
+        self.ast.addRelation(org, NodeType.LeftNode, S2, NodeType.TopNode)
+        self.ast.addRelation(org, NodeType.RightNode, S3, NodeType.TopNode)
+
+        self.drawGraph()
+
+        # self.addItem(alg)
+        # self.addItem(org)
+        # self.addItem(orgT)
+        # self.addItem(T)
+        #
+        # self.drawNewLine(T, NodeType.INSourceNode, orgT, NodeType.TopNode)
+        # self.drawNewLine(orgT, NodeType.LeftNode, alg, NodeType.TopNode)
+        # self.drawNewLine(orgT, NodeType.RightNode, org, NodeType.TopNode)
 
         # # TODO debug line 无法连接的bug
         # item1 = ORLogicGateItem()
@@ -107,12 +129,12 @@ class GraphScene(QGraphicsScene):
                 graphic_item = SourceLogicGateItem(genSymbol(), True)
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
-                self.ast.addNode(graphic_item, label=graphic_item.label)
+                self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OUTPUT_NODE.name:
                 graphic_item = SourceLogicGateItem(genSymbol(), False)
                 graphic_item.setPos(event.scenePos())
                 self.addItem(graphic_item)
-                self.ast.addNode(graphic_item, label=graphic_item.label)
+                self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OR.name:
                 graphic_item = ORLogicGateItem()
                 graphic_item.setPos(event.scenePos())
@@ -199,32 +221,75 @@ class GraphScene(QGraphicsScene):
         newLineItem.show()
         print("is new item in the scene: ", newLineItem in self.items())
 
-    def drawGraph(self, expr: str):
+    def drawGraph(self, expr: str = None):
         self.clear()
-        self.ast = ASTGraph.fromExpression(expr)
+        # self.ast = ASTGraph.fromExpression(expr)
         root = self.ast.findRoot().pop()
 
-        q = [root]
-        distToSource = [] * len(self.ast.adjList)
-        distToSource[root.node_id] = 0
+        width_interval = 100
+        height_interval = 150
+        current_height = 0
+
+        rootItem = SourceLogicGateItem(root.label, isInputNode=False)
+        rootItem.setPos(0, 0)
+        rootItem.setId(root.node_id)
+        self.addItem(rootItem)
+
+        firstOp = self.ast.adjList[root.leftChild]
+        firstOp.parent.append(rootItem)
+        firstOp.leans.append(NodeType.LeftNode)
+
+        q = [firstOp]
+        distToSource = [-1] * len(self.ast.adjList)
+        distToSource[firstOp.node_id] = 1
+
+        count = 0
         while len(q) != 0:
+            count += 1
             v = q.pop(0)
-            if self.current_height + 1 == self.distToSource[v.node_id]:
-                print()
-                self.current_height += 1
-            print("[%d, %s]" % (v.node_id, v.label), end="")
+
+            if current_height + 1 == distToSource[v.node_id]:
+                current_height += 1
+
+            posX = -height_interval * current_height
+            expected_width = 2 ** (current_height - 1)
+            offset = count - 2 ** (current_height - 1)
+            mid = (expected_width - 1) / 2
+            posY = (offset - mid) * width_interval
+
+            item = None
+            if v.symbol_type == LogicGateType.AND:
+                item = ANDLogicGateItem()
+            elif v.symbol_type == LogicGateType.NOT:
+                item = NOTLogicGateItem()
+            elif v.symbol_type == LogicGateType.OR:
+                item = ORLogicGateItem()
+            elif v.symbol_type == LogicGateType.INPUT_NODE:
+                item = SourceLogicGateItem(v.label, isInputNode=True)
+
+            item.setPos(posX, posY)
+            item.setId(v.node_id)
+            self.addItem(item)
+            for i in range(len(v.parent)):
+                self.drawNewLine(item, NodeType.TopNode, v.parent[i], v.leans[i])
 
             if v.leftChild != -1:
                 w = v.leftChild
-                if self.distToSource[w] == -1:
-                    q.append(self.G.adjList[w])
-                    self.distToSource[w] = self.distToSource[v.node_id] + 1
+                l = self.ast.adjList[w]
+                l.parent.append(item)
+                l.leans.append(NodeType.LeftNode)
+                if distToSource[w] == -1:
+                    q.append(l)
+                    distToSource[w] = distToSource[v.node_id] + 1
+
             if v.rightChild != -1:
                 w = v.rightChild
-                if self.distToSource[w] == -1:
-                    q.append(self.G.adjList[w])
-                    self.distToSource[w] = self.distToSource[v.node_id] + 1
-
+                r = self.ast.adjList[w]
+                r.parent.append(item)
+                r.leans.append(NodeType.RightNode)
+                if distToSource[w] == -1:
+                    q.append(r)
+                    distToSource[w] = distToSource[v.node_id] + 1
 
 
 class GraphWidget(TitleFrame):

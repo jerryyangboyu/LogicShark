@@ -23,6 +23,10 @@ class LogicSymbolNode(LogicGateItem):
         self.symbol_type = symbolType
         self.label = symbolType.name if label is None else label
 
+        # important: used to trace ui
+        self.parent = []
+        self.leans = []
+
         # if AND, OR gate, then we have both left and right child
         # if not gate, then only leftChild
         # if output symbol, then only leftChild
@@ -37,9 +41,12 @@ class ASTGraph:
     def __init__(self):
         self.adjList: List[LogicSymbolNode] = []
 
-    def addNode(self, item: LogicGateItem, label=None):
+    def addNode(self, item: LogicGateItem):
         item_id = item.node_id
-        newNode = LogicSymbolNode(item_id, LogicGateType[item.symbolName], label)
+        if item.symbolName == LogicGateType.INPUT_NODE.name or item.symbolName == LogicGateType.OUTPUT_NODE.name:
+            newNode = LogicSymbolNode(item_id, LogicGateType[item.symbolName], item.label)
+        else:
+            newNode = LogicSymbolNode(item_id, LogicGateType[item.symbolName])
         # if id exceed, then expand the list
         # note that id increase linearly, so it won't cost much memory
         if item_id >= len(self.adjList):

@@ -29,6 +29,9 @@ class LogicGateItem(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
+    def setId(self, node_id: int):
+        self.node_id = node_id
+
     def _draw(self, painter: QPainter):
         pass
 

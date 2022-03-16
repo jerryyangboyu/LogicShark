@@ -23,12 +23,12 @@ def testASTGraphVisualize():
     n6 = DummyLogicGateItem(LogicGateType.INPUT_NODE, label="C")
     n7 = DummyLogicGateItem(LogicGateType.OR)
 
-    g.addNode(n1, label=n1.label)
+    g.addNode(n1)
     g.addNode(n2)
     g.addNode(n3)
-    g.addNode(n4, label=n4.label)
-    g.addNode(n5, label=n5.label)
-    g.addNode(n6, label=n6.label)
+    g.addNode(n4)
+    g.addNode(n5)
+    g.addNode(n6)
     g.addNode(n7)
 
     g.addRelation(n7, NodeType.TopNode, n1, NodeType.INSourceNode)
