@@ -1,5 +1,4 @@
 # Defines methods to handle files: EXPORT, OPEN, SAVE
-from Main import MainWindow
 
 # OPEN
 # void -> list of expression strings
