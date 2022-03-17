@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
         self.ToolbarWidget.ClearScreenCommand.connect(self.clearScreenCommand)
         self.GraphWidget.OnGraphFinished.connect(self.handleGraphFinished)
         self.ConsoleWidget.DrawGraphCommand.connect(self.drawGraphCommand)
+        self.ToolbarWidget.SaveImageCommand.connect(self.exportGraph)
 
     def createMenu(self):
         self.Menu: QMenu = self.menuBar().addMenu("&About")
@@ -67,7 +68,11 @@ class MainWindow(QMainWindow):
         self.ConsoleWidget.OnGraphFinished.emit(consoleData)
 
     def drawGraphCommand(self, command):
+        print(command)
         self.GraphWidget.DrawGraphSignal.emit(command)
+
+    def exportGraph(self, loc: str):
+        self.GraphWidget.ExportCommand.emit(loc)
 
 
 app = QApplication(sys.argv)

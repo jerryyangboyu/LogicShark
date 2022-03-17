@@ -2,7 +2,7 @@ from typing import List
 
 import PySide6
 from PySide6.QtCore import Qt, QByteArray, QPoint, Signal
-from PySide6.QtGui import QTransform, QPainterPath, QPen, QColor
+from PySide6.QtGui import QTransform, QPainterPath, QPen, QColor, QImage, QPainter
 from PySide6.QtWidgets import QFrame, QGraphicsScene, QGraphicsView, QGraphicsPathItem, QGraphicsSceneMouseEvent
 from TitleFrame import TitleFrame
 from Component import ComponentCore
@@ -32,7 +32,7 @@ class GraphScene(QGraphicsScene):
         self.state = GraphicState.MouseMove
         self.ast = ASTGraph()
 
-        self.drawGraph("(A & ~C) | (B & C)", "Y")
+        # self.drawGraph("(A & ~C) | (B & C)", "Y")
 
         # alg = ANDLogicGateItem()
         # # alg.setPos(0, 0)
@@ -311,6 +311,7 @@ class GraphWidget(TitleFrame):
     ClearScreenSignal = Signal()
     DrawGraphSignal = Signal(list)
     OnGraphFinished = Signal(object)
+    ExportCommand = Signal(str)
 
     def __init__(self):
         super().__init__("GRAPH")
@@ -324,12 +325,26 @@ class GraphWidget(TitleFrame):
 
         self.ClearScreenSignal.connect(self.handleClearScreen)
         self.DrawGraphSignal.connect(self.handleDrawSignal)
+        self.ExportCommand.connect(self.handleExportCommand)
 
-    def handleDrawSignal(self, expr: str, label: str):
-        self.GraphScene.drawGraph(expr, label)
+    def handleDrawSignal(self, data):
+        self.GraphScene.drawGraph(data[0], data[1])
+        self.postGraphFinished(self.GraphScene.ast.toExpression())
 
     def handleClearScreen(self):
         self.GraphScene.clear()
 
     def postGraphFinished(self, consoleData: ConsoleData):
         self.OnGraphFinished.emit(consoleData)
+
+    def handleExportCommand(self, location: str):
+        self.GraphScene.clearSelection()
+        self.GraphScene.setSceneRect(self.GraphScene.itemsBoundingRect())
+        image = QImage(self.GraphScene.sceneRect().size().toSize(), QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+        print(image)
+        painter = QPainter(image)
+        self.GraphScene.render(painter)
+        painter.end()
+        image.save(location)
+

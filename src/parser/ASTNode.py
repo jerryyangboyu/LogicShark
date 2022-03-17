@@ -170,7 +170,7 @@ class ASTGraph:
         for root in roots:
             SearchPaths.bfs(root)
 
-        self.toExpressions()
+        self.toExpression()
 
     class BreathFirstSearchPaths:
         def __init__(self, G):

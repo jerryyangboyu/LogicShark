@@ -1,8 +1,10 @@
 from PySide6.QtCore import QEvent, Signal
 from PySide6.QtWidgets import QFrame, QWidget, QToolButton, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, \
-    QHBoxLayout, QGridLayout, QListWidget, QListWidgetItem, QVBoxLayout
+    QHBoxLayout, QGridLayout, QListWidget, QListWidgetItem, QVBoxLayout, QScrollArea
 # ~ from PySide6.QtCore
 from PySide6.QtGui import QIcon
+
+from src.LogicTypes import ConsoleData
 
 
 class CustomEditWidget(QLineEdit):
@@ -18,36 +20,47 @@ class CustomEditWidget(QLineEdit):
 
 
 class ConsoleWidget(QFrame):
+    OnGraphFinished = Signal(object)
+    DrawGraphCommand = Signal(list)
+
     def __init__(self):
         super().__init__()
         self.inputWidgets = []
         self.labelWidgets = []
         self.currentLineId = 0
         self.truthTable = QTableWidget()
-        self.setFixedHeight(200)
+
+        self.setMaximumHeight(400)
         self.setMinimumWidth(200)
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
         self.setAcceptDrops(True)
         # self.setStyleSheet("background-color: #c02c38")
 
-        self.currentExprNum = 0
+        self.currentExprNum = 1
 
         # Model
-        self.labelList = ["Label 1", "Label 2"]
-        self.exprList = ["Expr 1", "Expr 2"]
+        self.labelList = ["A", "B"]
+        self.exprList = ["A & B", "A | ~C"]
 
         self.mainLayout = QHBoxLayout()
         self.inputListLayout = QGridLayout()
         self.listLayout = QVBoxLayout()
 
-        self.labelWidgets = [self.createLabelButton() for _ in range(len(self.labelList))]
+        self.labelWidgets = [self.createLabelButton(label) for label in self.labelList]
         self.inputWidgets = [self.createInputBox(self.exprList[i], i) for i in range(len(self.exprList))]
         # View
         for i in range(len(self.labelList)):
             self.inputListLayout.addWidget(self.labelWidgets[i], i, 0)
             self.inputListLayout.addWidget(self.inputWidgets[i], i, 1)
 
-        self.listLayout.addLayout(self.inputListLayout)
+        self.inputListLayout.setRowStretch(0, 100)
+
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setLayout(self.inputListLayout)
+
+        # ~ self.listLayout.addLayout(self.inputListLayout)
+        self.listLayout.addWidget(self.scrollArea)
+
         self.listLayout.addWidget(self.createNewButton())
 
         self.mainLayout.addLayout(self.listLayout)
@@ -57,47 +70,64 @@ class ConsoleWidget(QFrame):
         self.setLayout(self.mainLayout)
         self.update()
 
-        #
-        #
-        # self.buttonSize = [40, 40]
-        # self.bottonPosition = [10, 10]
-        # self.space = 10
-        # self.bottonNumber = 1
-        #
-        # self.plusButton = QPushButton('+', self)
-        # self.plusButton.resize(self.buttonSize[0], self.buttonSize[1])
-        # # self.plusButton.move(self.bottonPosition[0], self.bottonPosition[1])
-        # self.plusButton.clicked.connect(self.plusButtonHandle)
-        #
-        # # ~ self.tmpButton = QPushButton('+', self)
-        # # ~ self.bottonBox = [self.plusButton,self.tmpButton]
-        # self.currentBotton = self.plusButton
+        self.OnGraphFinished.connect(self.handleGraphComplete)
 
-        # self.lEXcord = self.bottonPosition[0] + self.buttonSize[0] + self.space / 2
-        # self.currentLineEdit.move(self.lEXcord, self.bottonPosition[1])
+    #
+    #
+    # self.buttonSize = [40, 40]
+    # self.bottonPosition = [10, 10]
+    # self.space = 10
+    # self.bottonNumber = 1
+    #
+    # self.plusButton = QPushButton('+', self)
+    # self.plusButton.resize(self.buttonSize[0], self.buttonSize[1])
+    # # self.plusButton.move(self.bottonPosition[0], self.bottonPosition[1])
+    # self.plusButton.clicked.connect(self.plusButtonHandle)
+    #
+    # # ~ self.tmpButton = QPushButton('+', self)
+    # # ~ self.bottonBox = [self.plusButton,self.tmpButton]
+    # self.currentBotton = self.plusButton
 
-        # self.
+    # self.lEXcord = self.bottonPosition[0] + self.buttonSize[0] + self.space / 2
+    # self.currentLineEdit.move(self.lEXcord, self.bottonPosition[1])
 
-    def addRecord(self):
-        self.inputListLayout.addWidget(self.createLabelButton(), self.currentLineId - 1, 0)
-        self.inputListLayout.addWidget(self.createInputBox(self.exprList[-1], self.currentLineId), self.currentLineId - 1, 1)
-        # self.listLayout.setRowStretch(len(self.labelList) + 1, 10)
-        # self.listLayout.update()
-        # Map the Model into widgets
+    # self.
+
+    def handleGraphComplete(self, consoleData: ConsoleData):
+        print("in console")
+        print(consoleData.truthTable)
+
+    def drawGraph(self, expr: str, label: str):
+        self.DrawGraphCommand.emit([expr, label])
+
+    def addRecord(self, label):
+        newBtn = self.createLabelButton(label)
+        newBox = self.createInputBox(self.exprList[-1], self.currentLineId)
+        self.inputListLayout.addWidget(newBtn, self.currentLineId + 1, 0)
+        self.inputListLayout.addWidget(newBox, self.currentLineId + 1, 1)
+        self.labelWidgets.append(newBtn)
+        self.inputWidgets.append(newBox)
+
+    # self.listLayout.setRowStretch(len(self.labelList) + 1, 10)
+    # self.listLayout.update()
+    # Map the Model into widgets
 
     def newInputBoxEvent(self):
-        self.currentExprNum += 1
+        # ~ self.currentExprNum += 1
         self.currentLineId += 1
-        self.labelList.append("Expr " + str(self.currentExprNum))
-        self.exprList.append("Enter your expr")
-        self.addRecord()
-        # self.currentBotton.setFlat(True)
-        # self.currentBotton.setText("Exp " + str(self.bottonNumber))
-        # self.createNewButton()
+        label = chr(ord(self.labelList[-1]) + 1)
+        self.labelList.append(label)
+        self.exprList.append("A & B")
+        self.addRecord(label)
 
-    def createLabelButton(self):
-        newButton = QPushButton("Expr " + str(self.currentExprNum))
+    # self.currentBotton.setFlat(True)
+    # self.currentBotton.setText("Exp " + str(self.bottonNumber))
+    # self.createNewButton()
+
+    def createLabelButton(self, label):
+        newButton = QPushButton(label)
         newButton.resize(40, 40)
+        self.currentExprNum += 1
         return newButton
 
     def createInputBox(self, content: str, inputId: int):
@@ -108,7 +138,9 @@ class ConsoleWidget(QFrame):
 
     def selectInputBoxChange(self, lineId):
         self.currentLineId = lineId
-        print(self.exprList[lineId])
+        widget: CustomEditWidget = self.inputWidgets[lineId]
+        self.exprList[lineId] = widget.text()
+        self.drawGraph(self.exprList[lineId], self.labelList[lineId])
 
     def createNewButton(self):
         newButton = QPushButton('+')
