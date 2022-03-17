@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, Q
     QSizePolicy, QGroupBox, QFileDialog
 
 from algorithm import cnf, dnf, simplify
+from fileHandling import launchReader, launchWriter
 
 
 class ToolBar(QFrame):
@@ -38,18 +39,18 @@ class ToolBar(QFrame):
         GroupBox = QGroupBox()
         GroupBox.setTitle("Graph")
         GroupBoxLayout = QHBoxLayout()
-        button1 = QPushButton('NEW')
+        # button1 = QPushButton('NEW')
         button2 = QPushButton('OPEN')
         button3 = QPushButton('SAVE')
         button4 = QPushButton('EXPORT')
-        GroupBoxLayout.addWidget(button1)
+        # GroupBoxLayout.addWidget(button1)
         GroupBoxLayout.addWidget(button2)
         GroupBoxLayout.addWidget(button3)
         GroupBoxLayout.addWidget(button4)
         GroupBox.setLayout(GroupBoxLayout)
 
         # Button signal handling
-        button1.clicked.connect(self.clickedNewButton)
+        # button1.clicked.connect(self.clickedNewButton)
         button2.clicked.connect(self.clickedOpenButton)
         button3.clicked.connect(self.clickedSaveButton)
         button4.clicked.connect(self.clickedExportButton)
@@ -63,12 +64,12 @@ class ToolBar(QFrame):
         button5 = QPushButton("CNF")
         button6 = QPushButton("DNF")
         button7 = QPushButton("Simplify")
-        button8 = QPushButton("Custom")
+        # button8 = QPushButton("Custom")
         button9 = QPushButton("Clear")
         GroupBoxLayout.addWidget(button5)
         GroupBoxLayout.addWidget(button6)
         GroupBoxLayout.addWidget(button7)
-        GroupBoxLayout.addWidget(button8)
+        # GroupBoxLayout.addWidget(button8)G
         GroupBoxLayout.addWidget(button9)
         GroupBox.setLayout(GroupBoxLayout)
 
@@ -76,7 +77,7 @@ class ToolBar(QFrame):
         button5.clicked.connect(self.clickedCNFButton)
         button6.clicked.connect(self.clickedDNFButton)
         button7.clicked.connect(self.clickedSimplifyButton)
-        button8.clicked.connect(self.clickedCustomButton)
+        # button8.clicked.connect(self.clickedCustomButton)
         button9.clicked.connect(self.clickedClearButton)
         return GroupBox
 
@@ -85,9 +86,13 @@ class ToolBar(QFrame):
         print("NEW")
 
     def clickedOpenButton(self):
+        result = launchReader()
         print("OPEN")
 
     def clickedSaveButton(self):
+        exprList = []
+        # exprList = ['A | B & ~C' for _ in range(21)]
+        launchWriter(exprList)
         print("SAVE")
 
     def clickedExportButton(self):
