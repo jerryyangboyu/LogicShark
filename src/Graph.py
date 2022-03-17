@@ -11,7 +11,8 @@ from DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLog
 
 from enum import Enum
 from src.parser.ASTNode import ASTGraph
-from LogicTypes import LogicGateType, NodeType
+from LogicTypes import LogicGateType, NodeType, ConsoleData
+
 
 class GraphicState(Enum):
     MouseMove, InsertLine, InsertItem = range(3)
@@ -223,10 +224,9 @@ class GraphScene(QGraphicsScene):
 
     def connectLogicLine(self, s, l1, e, l2):
         # self.ast.addRelation(s, l1, e, l2)
-        exprs = self.ast.toExpressions()
-        if len(exprs) != 0:
-            self.parent.postGraphFinished(exprs)
-        print(self.parent, exprs)
+        consoleData = self.ast.toExpression()
+        if consoleData.expression != "":
+            self.parent.postGraphFinished(consoleData)
 
     def drawNewLine(self, s, l1, e, l2):
         newLineItem = LineItem(s, l1, e, l2)
@@ -309,7 +309,7 @@ class GraphScene(QGraphicsScene):
 
 class GraphWidget(TitleFrame):
     ClearScreenSignal = Signal()
-    DrawGraphSignal = Signal(str)
+    DrawGraphSignal = Signal(list)
     OnGraphFinished = Signal(object)
 
     def __init__(self):
@@ -325,11 +325,11 @@ class GraphWidget(TitleFrame):
         self.ClearScreenSignal.connect(self.handleClearScreen)
         self.DrawGraphSignal.connect(self.handleDrawSignal)
 
-    def handleDrawSignal(self, expr: str):
-        self.GraphScene.drawGraph(expr)
+    def handleDrawSignal(self, expr: str, label: str):
+        self.GraphScene.drawGraph(expr, label)
 
     def handleClearScreen(self):
         self.GraphScene.clear()
 
-    def postGraphFinished(self, exprs: List[str]):
-        self.OnGraphFinished.emit(exprs)
+    def postGraphFinished(self, consoleData: ConsoleData):
+        self.OnGraphFinished.emit(consoleData)

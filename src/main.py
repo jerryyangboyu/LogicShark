@@ -1,5 +1,6 @@
 import sys
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QGridLayout, QMenu, QApplication
 
@@ -7,9 +8,11 @@ import Component
 import Console
 import Graph
 import ToolBar
+from src.LogicTypes import ConsoleData
 
 
 class MainWindow(QMainWindow):
+
     def __init__(self):
         super().__init__()
 
@@ -48,6 +51,7 @@ class MainWindow(QMainWindow):
 
         self.ToolbarWidget.ClearScreenCommand.connect(self.clearScreenCommand)
         self.GraphWidget.OnGraphFinished.connect(self.handleGraphFinished)
+        self.ConsoleWidget.DrawGraphCommand.connect(self.drawGraphCommand)
 
     def createMenu(self):
         self.Menu: QMenu = self.menuBar().addMenu("&About")
@@ -59,8 +63,11 @@ class MainWindow(QMainWindow):
     def clearScreenCommand(self):
         self.GraphWidget.ClearScreenSignal.emit()
 
-    def handleGraphFinished(self, exprs):
-        print("new exprs here", exprs)
+    def handleGraphFinished(self, consoleData: ConsoleData):
+        self.ConsoleWidget.OnGraphFinished.emit(consoleData)
+
+    def drawGraphCommand(self, command):
+        self.GraphWidget.DrawGraphSignal.emit(command)
 
 
 app = QApplication(sys.argv)

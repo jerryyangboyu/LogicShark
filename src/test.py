@@ -67,7 +67,7 @@ def testGenGraph():
     print(ts, "Y")
     g = ASTGraph.fromExpression(ts, "Y")
     # print(g.toExpression().expression, g.toExpression().label)
-    print(g.toExpression().expression)
+    print(g.toExpression().truthTable)
 
 
 if __name__ == '__main__':
