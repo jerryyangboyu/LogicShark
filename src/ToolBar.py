@@ -2,7 +2,7 @@ from PySide6.QtCore import QSize, QRect, Signal
 from PySide6.QtGui import QIcon, QPixmap, Qt
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QFrame, QToolButton, QLabel, QPushButton, \
-    QSizePolicy, QGroupBox
+    QSizePolicy, QGroupBox, QFileDialog
 
 from algorithm import cnf, dnf, simplify
 
@@ -91,7 +91,8 @@ class ToolBar(QFrame):
         print("SAVE")
 
     def clickedExportButton(self):
-        self.SaveImageCommand.emit("/Users/jerry/Desktop/result.png")
+        fileName, _ = QFileDialog.getSaveFileName(self, 'Save File', 'default.png', "Image file (*.png)")
+        self.SaveImageCommand.emit(fileName)
 
     def clickedCNFButton(self):
         print('CNF: ')
