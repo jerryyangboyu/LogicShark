@@ -10,10 +10,8 @@ from DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLog
     SourceLogicGateItem
 
 from enum import Enum
-from ASTNode import genSymbol, ASTGraph
+from src.parser.ASTNode import ASTGraph
 from LogicTypes import LogicGateType, NodeType
-from src.algorithm import dnf, cnf, simplify
-
 
 class GraphicState(Enum):
     MouseMove, InsertLine, InsertItem = range(3)
@@ -33,46 +31,48 @@ class GraphScene(QGraphicsScene):
         self.state = GraphicState.MouseMove
         self.ast = ASTGraph()
 
-        alg = ANDLogicGateItem()
-        # alg.setPos(0, 0)
+        self.drawGraph("(A & ~C) | (B & C)", "Y")
+
+        # alg = ANDLogicGateItem()
+        # # alg.setPos(0, 0)
+        # #
+        # org = ORLogicGateItem()
+        # # org.setPos(0, 100)
+        # #
+        # orgT = ORLogicGateItem()
+        # # orgT.setPos(150, 50)
+        # #
+        # T = SourceLogicGateItem("Y", isInputNode=False)
+        # # T.setPos(250, 50)
         #
-        org = ORLogicGateItem()
-        # org.setPos(0, 100)
+        # S1 = SourceLogicGateItem("S1", isInputNode=True)
+        # S2 = SourceLogicGateItem("S2", isInputNode=True)
+        # S3 = SourceLogicGateItem("S3", isInputNode=True)
         #
-        orgT = ORLogicGateItem()
-        # orgT.setPos(150, 50)
+        # self.ast.addNode(alg)
+        # self.ast.addNode(org)
+        # self.ast.addNode(orgT)
+        # self.ast.addNode(T)
+        # self.ast.addNode(S1)
+        # self.ast.addNode(S2)
+        # self.ast.addNode(S3)
         #
-        T = SourceLogicGateItem("Y", isInputNode=False)
-        # T.setPos(250, 50)
+        # self.ast.addRelation(T, NodeType.LeftNode, orgT, NodeType.TopNode)
+        # self.ast.addRelation(orgT, NodeType.LeftNode, alg, NodeType.TopNode)
+        # self.ast.addRelation(orgT, NodeType.RightNode, org, NodeType.TopNode)
+        # self.ast.addRelation(alg, NodeType.LeftNode, S1, NodeType.TopNode)
+        # self.ast.addRelation(alg, NodeType.RightNode, S2, NodeType.TopNode)
+        # self.ast.addRelation(org, NodeType.LeftNode, S2, NodeType.TopNode)
+        # self.ast.addRelation(org, NodeType.RightNode, S3, NodeType.TopNode)
+        #
+        # self.drawGraph()
 
-        S1 = SourceLogicGateItem("S1", isInputNode=True)
-        S2 = SourceLogicGateItem("S2", isInputNode=True)
-        S3 = SourceLogicGateItem("S3", isInputNode=True)
-
-        self.ast.addNode(alg)
-        self.ast.addNode(org)
-        self.ast.addNode(orgT)
-        self.ast.addNode(T)
-        self.ast.addNode(S1)
-        self.ast.addNode(S2)
-        self.ast.addNode(S3)
-
-        self.ast.addRelation(T, NodeType.LeftNode, orgT, NodeType.TopNode)
-        self.ast.addRelation(orgT, NodeType.LeftNode, alg, NodeType.TopNode)
-        self.ast.addRelation(orgT, NodeType.RightNode, org, NodeType.TopNode)
-        self.ast.addRelation(alg, NodeType.LeftNode, S1, NodeType.TopNode)
-        self.ast.addRelation(alg, NodeType.RightNode, S2, NodeType.TopNode)
-        self.ast.addRelation(org, NodeType.LeftNode, S2, NodeType.TopNode)
-        self.ast.addRelation(org, NodeType.RightNode, S3, NodeType.TopNode)
-
-        self.drawGraph()
-
-        exprs, labels = self.ast.toExpressions()
-        print("Label is: ", labels[0])
-        print("Expression is: ", exprs[0])
-        print("The dnf form is: ", dnf(exprs[0]))
-        print("The cnf form is: ", cnf(exprs[0]))
-        print("It can simplify as: ", simplify(exprs[0]))
+        # exprs, labels = self.ast.toExpressions()
+        # print("Label is: ", labels[0])
+        # print("Expression is: ", exprs[0])
+        # print("The dnf form is: ", dnf(exprs[0]))
+        # print("The cnf form is: ", cnf(exprs[0]))
+        # print("It can simplify as: ", simplify(exprs[0]))
 
         # self.addItem(alg)
         # self.addItem(org)
@@ -129,28 +129,33 @@ class GraphScene(QGraphicsScene):
             if label_type == LogicGateType.AND.name:
                 graphic_item = ANDLogicGateItem()
                 graphic_item.setPos(event.scenePos())
+                graphic_item.setId(self.ast.generator.genNodeId())
                 self.addItem(graphic_item)
                 self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.INPUT_NODE.name:
                 # TODO
                 # assign next Name here, from A, B, C, D ...
-                graphic_item = SourceLogicGateItem(genSymbol(), True)
+                graphic_item = SourceLogicGateItem(self.ast.generator.genSymbol(), True)
                 graphic_item.setPos(event.scenePos())
+                graphic_item.setId(self.ast.generator.genNodeId())
                 self.addItem(graphic_item)
                 self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OUTPUT_NODE.name:
-                graphic_item = SourceLogicGateItem(genSymbol(), False)
+                graphic_item = SourceLogicGateItem(self.ast.generator.genSymbol(), False)
                 graphic_item.setPos(event.scenePos())
+                graphic_item.setId(self.ast.generator.genNodeId())
                 self.addItem(graphic_item)
                 self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OR.name:
                 graphic_item = ORLogicGateItem()
                 graphic_item.setPos(event.scenePos())
+                graphic_item.setId(self.ast.generator.genNodeId())
                 self.addItem(graphic_item)
                 self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.NOT.name:
                 graphic_item = NOTLogicGateItem()
                 graphic_item.setPos(event.scenePos())
+                graphic_item.setId(self.ast.generator.genNodeId())
                 self.addItem(graphic_item)
                 self.ast.addNode(graphic_item)
             if event.source() == self:
@@ -229,10 +234,10 @@ class GraphScene(QGraphicsScene):
         newLineItem.show()
         print("is new item in the scene: ", newLineItem in self.items())
 
-    def drawGraph(self, expr: str = None):
+    def drawGraph(self, expr, label):
         self.clear()
-        # self.ast = ASTGraph.fromExpression(expr)
-        root = self.ast.findRoot().pop()
+        self.ast = ASTGraph.fromExpression(expr, label)
+        root = self.ast.findRoot()
 
         width_interval = 100
         height_interval = 150
@@ -266,14 +271,16 @@ class GraphScene(QGraphicsScene):
             posY = (offset - mid) * width_interval
 
             item = None
-            if v.symbol_type == LogicGateType.AND:
+            if v.symbol_type.name == LogicGateType.AND.name:
                 item = ANDLogicGateItem()
-            elif v.symbol_type == LogicGateType.NOT:
+            elif v.symbol_type.name == LogicGateType.NOT.name:
                 item = NOTLogicGateItem()
-            elif v.symbol_type == LogicGateType.OR:
+            elif v.symbol_type.name == LogicGateType.OR.name:
                 item = ORLogicGateItem()
-            elif v.symbol_type == LogicGateType.INPUT_NODE:
+            elif v.symbol_type.name == LogicGateType.INPUT_NODE.name:
                 item = SourceLogicGateItem(v.label, isInputNode=True)
+            else:
+                raise Exception("Not supported item: ", v.label, v.symbol_type)
 
             item.setPos(posX, posY)
             item.setId(v.node_id)

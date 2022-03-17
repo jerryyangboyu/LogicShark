@@ -1,10 +1,12 @@
-from ASTNode import ASTGraph, genNodeId
+from src.parser.ASTNode import ASTGraph
 from LogicTypes import NodeType, LogicGateItem, LogicGateType
+
+generator = ASTGraph().generator
 
 
 class DummyLogicGateItem(LogicGateItem):
     def __init__(self, symbolType: LogicGateType, label=None):
-        self.node_id = genNodeId()
+        self.node_id = generator.genNodeId()
         self.symbolName = symbolType.name
         self.label = self.symbolName if label is None else label
 
@@ -44,9 +46,9 @@ def testASTGraphVisualize():
     # g.removeRelation(n5, n2)
     # g.removeNode(n2)
 
-    print(g.toExpressions())
+    consoleData = g.toExpression()
+    print(consoleData.truthTable)
     # g.printRelationship()
-
 
     # test simple root conenct case
     # g = ASTGraph()
@@ -60,5 +62,13 @@ def testASTGraphVisualize():
     # g.printRelationship()
 
 
+def testGenGraph():
+    ts = "A & (B | C)"
+    print(ts, "Y")
+    g = ASTGraph.fromExpression(ts, "Y")
+    # print(g.toExpression().expression, g.toExpression().label)
+    print(g.toExpression().expression)
+
+
 if __name__ == '__main__':
-    testASTGraphVisualize()
+    testGenGraph()

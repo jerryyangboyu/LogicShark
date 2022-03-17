@@ -7,7 +7,6 @@ from PySide6.QtGui import QColor, QPainter, QPainterPathStroker, QPainterPath, Q
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QLabel, \
     QGraphicsTextItem, QMenu
 
-from ASTNode import genNodeId
 from LogicTypes import LogicGateType, NodeType
 
 line_width = 3.6
@@ -23,7 +22,7 @@ class LogicGateItem(QGraphicsPathItem):
 
     def __init__(self, parent=None, scene=None):
         super(LogicGateItem, self).__init__(parent, scene)
-        self.node_id = genNodeId()
+        self.node_id = None
         self.connected_lines = []
         self.setAcceptHoverEvents(True)  # For performance reason, this is auto closed
         self.setFlag(QGraphicsItem.ItemIsMovable, True)

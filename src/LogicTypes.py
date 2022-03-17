@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, List
 
 
 class LogicGateItem(Protocol):
@@ -21,3 +21,9 @@ class NodeType(Enum):
 
     def isOutputNode(self):
         return self.value == NodeType.TopNode.value or self.value == NodeType.OUTSourceNode.value
+
+
+class ConsoleData:
+    label: str = ""
+    expression: str = ""
+    truthTable: List[List[str]] = None
