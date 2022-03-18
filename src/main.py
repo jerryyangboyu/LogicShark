@@ -55,9 +55,9 @@ class MainWindow(QMainWindow):
         self.ToolbarWidget.SaveImageCommand.connect(self.exportGraph)
         self.ToolbarWidget.LoadExpressions.connect(self.handleLoadExpressions)
         self.ToolbarWidget.SaveExpressions.connect(self.handleSaveExpressions)
-
-        # test
-        self.ConsoleWidget.handleExpressionLoaded([["A"], ["B"]])
+        self.ToolbarWidget.CNF.connect(self.CNF)
+        self.ToolbarWidget.DNF.connect(self.DNF)
+        self.ToolbarWidget.SIM.connect(self.SIM)
 
     def handleSaveExpressions(self):
         self.ConsoleWidget.SaveExpressions.emit()
@@ -84,6 +84,15 @@ class MainWindow(QMainWindow):
 
     def exportGraph(self, loc: str):
         self.GraphWidget.ExportCommand.emit(loc)
+
+    def CNF(self):
+        self.ConsoleWidget.newCNFExpr()
+
+    def DNF(self):
+        self.ConsoleWidget.newDNFExpr()
+
+    def SIM(self):
+        self.ConsoleWidget.newSIMExpr()
 
 
 app = QApplication(sys.argv)

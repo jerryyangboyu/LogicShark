@@ -30,7 +30,7 @@ def convertFromExpr(s: str):
 
 
 def convertToExpr(s: str):
-    return s
+    return str(s)
     # return s.replace("^", "AND") \
     #     .replace("|", "OR") \
     #     .replace("~", "NOT")

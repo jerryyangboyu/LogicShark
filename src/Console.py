@@ -6,23 +6,25 @@ from PySide6.QtGui import QIcon
 
 from LogicTypes import ConsoleData
 from fileHandling import launchWriter
+from src.algorithm import cnf, dnf, simplify
 
 
 class CustomEditWidget(QLineEdit):
+
     inputChangeEvent = Signal(int)
     inputEditedEvent = Signal(int)
 
-    def __init__(self, content: str, lineEditId: int):
+    def __init__(self, content: str, line_id: int):
         super().__init__(content)
-        self.lineEditId = lineEditId
+        self.line_id = line_id
         self.editingFinished.connect(self.internalFinishHandle)
         self.textEdited.connect(self.internalChangeHappenHandle)
 
     def internalFinishHandle(self) -> None:
-        self.inputChangeEvent.emit(self.lineEditId)
+        self.inputChangeEvent.emit(self.line_id)
 
     def internalChangeHappenHandle(self) -> None:
-        self.inputEditedEvent.emit(self.lineEditId)
+        self.inputEditedEvent.emit(self.line_id)
 
 
 class CustomLabel(QPushButton):
@@ -38,7 +40,8 @@ class CustomLabel(QPushButton):
         self.setBackGround()
 
     def setBackGround(self):
-        self.setStyleSheet("background-color: {0}; border: none; color: white".format("red" if self.isActive else "blue"))
+        self.setStyleSheet(
+            "background-color: {0}; border: none; color: white".format("red" if self.isActive else "blue"))
 
 
 class ConsoleWidget(QFrame):
@@ -110,10 +113,33 @@ class ConsoleWidget(QFrame):
         self.SaveExpressions.connect(self.handleSaveExpressions)
 
     def handleExpressionLoaded(self, data):
-        print(data[0], data[1])
+        self.labelList = data[0]
+        self.exprList = data[1]
+
+        self.currentLineId = 0
+        self.inputWidgets = []
+        self.labelWidgets = []
+
+        if self.inputListLayout is not None:
+            while self.inputListLayout.count():
+                item = self.inputListLayout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+
+        for i in range(len(self.labelList)):
+            btn = self.createLabelButton(self.labelList[i], self.currentLineId)
+            box = self.createInputBox(self.exprList[i], self.currentLineId)
+            self.inputListLayout.addWidget(btn, i, 0)
+            self.inputListLayout.addWidget(box, i, 1)
+            self.labelWidgets.append(btn)
+            self.inputWidgets.append(box)
+            self.currentLineId += 1
+
+        print(self.labelList)
 
     def handleSaveExpressions(self):
-        launchWriter([], [])
+        launchWriter(self.labelList, self.exprList)
 
     def changeExpr(self, line_id: int, expr: str):
         self.inputWidgets[line_id].setText(expr)
@@ -121,10 +147,14 @@ class ConsoleWidget(QFrame):
 
     def changeActiveLineId(self, line_id: int):
         self.currentExprNum = line_id
-        for widget in self.labelWidgets:
-            if widget.line_id == self.currentExprNum:
-                widget.setActive(True)
-            widget.setActive(False)
+        self.inputListLayout.count()
+        for i in range(self.inputListLayout.count()):
+            w = self.inputListLayout.itemAt(i).widget()
+            if isinstance(w, CustomLabel):
+                if w.line_id == line_id:
+                    w.setActive(True)
+                else:
+                    w.setActive(False)
 
     def handleGraphComplete(self, consoleData: ConsoleData):
         # ~ print("in console")
@@ -150,9 +180,12 @@ class ConsoleWidget(QFrame):
     def drawGraph(self, expr: str, label: str):
         self.DrawGraphCommand.emit([expr, label])
 
-    def addRecord(self, label):
+    def addRecord(self, label, expr=None):
+        self.currentLineId += 1
+        if expr is None:
+            expr = self.exprList[-1]
         newBtn = self.createLabelButton(label, self.currentLineId)
-        newBox = self.createInputBox(self.exprList[-1], self.currentLineId)
+        newBox = self.createInputBox(expr, self.currentLineId)
         self.inputListLayout.addWidget(newBtn, self.currentLineId + 1, 0)
         self.inputListLayout.addWidget(newBox, self.currentLineId + 1, 1)
         self.labelWidgets.append(newBtn)
@@ -161,7 +194,6 @@ class ConsoleWidget(QFrame):
 
     def newInputBoxEvent(self):
         # ~ self.currentExprNum += 1
-        self.currentLineId += 1
         label = chr(ord(self.labelList[-1]) + 1)
         self.labelList.append(label)
         self.exprList.append("A & B")
@@ -169,7 +201,7 @@ class ConsoleWidget(QFrame):
 
     def createLabelButton(self, label, line_id):
         newButton = CustomLabel(label, line_id)
-        newButton.setFlat(False)
+        newButton.setFlat(True)
         newButton.setMinimumWidth(40)
         newButton.setMinimumHeight(40)
         newButton.setMaximumWidth(40)
@@ -186,7 +218,7 @@ class ConsoleWidget(QFrame):
         return currentLineEdit
 
     def selectInputBoxChange(self, lineId):
-        # ~ print("LINE ID: ", lineId)
+        print("LINE ID: ", lineId)
         widget: CustomEditWidget = self.inputWidgets[lineId]
         self.exprList[lineId] = widget.text()
         self.drawGraph(self.exprList[lineId], self.labelList[lineId])
@@ -194,7 +226,7 @@ class ConsoleWidget(QFrame):
 
     def selectInputBoxEdited(self, lineId):
         print("LINE ID: ", lineId)
-        self.inputListWidget.setMinimumWidth(300000)
+        self.inputListWidget.setMinimumWidth(420)
         widget: CustomEditWidget = self.inputWidgets[lineId]
         if len(widget.text()) > 20:
             print(len(widget.text()), self.lineEditWidth)
@@ -208,3 +240,24 @@ class ConsoleWidget(QFrame):
         newButton.resize(40, 40)
         newButton.clicked.connect(self.newInputBoxEvent)
         return newButton
+
+    def newCNFExpr(self):
+        newExpr = self.exprList[self.currentExprNum]
+        newExpr = cnf(newExpr)
+        self.exprList.append(newExpr)
+        self.labelList.append("CNF")
+        self.addRecord("CNF", newExpr)
+
+    def newDNFExpr(self):
+        newExpr = self.exprList[self.currentExprNum]
+        newExpr = dnf(newExpr)
+        self.exprList.append(newExpr)
+        self.labelList.append("DNF")
+        self.addRecord("DNF", newExpr)
+
+    def newSIMExpr(self):
+        newExpr = self.exprList[self.currentExprNum]
+        newExpr = simplify(newExpr)
+        self.exprList.append(newExpr)
+        self.labelList.append("SIM")
+        self.addRecord("SIM", newExpr)

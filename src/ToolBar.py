@@ -9,11 +9,13 @@ from fileHandling import launchReader, launchWriter, readAllFileWithExtension
 
 
 class ToolBar(QFrame):
-
     ClearScreenCommand = Signal()
     SaveImageCommand = Signal(str)
     LoadExpressions = Signal(list)
     SaveExpressions = Signal()
+    CNF = Signal()
+    DNF = Signal()
+    SIM = Signal()
 
     def __init__(self):
         super().__init__()
@@ -58,7 +60,6 @@ class ToolBar(QFrame):
         button4.clicked.connect(self.clickedExportButton)
         return GroupBox
 
-
     def createFunctionButtonGroup(self):
         GroupBox = QGroupBox()
         GroupBox.setTitle("Functions")
@@ -83,7 +84,6 @@ class ToolBar(QFrame):
         button9.clicked.connect(self.clickedClearButton)
         return GroupBox
 
-
     def clickedNewButton(self):
         print("NEW")
 
@@ -102,13 +102,13 @@ class ToolBar(QFrame):
         self.SaveImageCommand.emit(fileName)
 
     def clickedCNFButton(self):
-        print('CNF: ')
+        self.CNF.emit()
 
     def clickedDNFButton(self):
-        print('DNF: ')
+        self.DNF.emit()
 
     def clickedSimplifyButton(self):
-        print('Simplify: ')
+        self.SIM.emit()
 
     def clickedCustomButton(self):
         print("CUSTOM")
@@ -126,6 +126,3 @@ class ToolBar(QFrame):
 
         logoWidget.setPixmap(pixelMap)
         return logoWidget
-
-
-
