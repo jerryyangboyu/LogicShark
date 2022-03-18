@@ -30,7 +30,8 @@ class ConsoleWidget(QFrame):
         self.currentLineId = 0
         self.truthTable = QTableWidget()
 
-        self.setMaximumHeight(400)
+        # self.setMaximumHeight(400)
+        self.setMaximumHeight(300)
         self.setMinimumWidth(200)
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
         self.setAcceptDrops(True)
@@ -44,7 +45,12 @@ class ConsoleWidget(QFrame):
 
         self.mainLayout = QHBoxLayout()
         self.inputListLayout = QGridLayout()
+        self.inputListWidget = QWidget()
         self.listLayout = QVBoxLayout()
+
+        self.inputListLayout.setContentsMargins(0, 0, 0, 0)
+        self.inputListLayout.setVerticalSpacing(0)
+        self.inputListLayout.setHorizontalSpacing(0)
 
         self.labelWidgets = [self.createLabelButton(label) for label in self.labelList]
         self.inputWidgets = [self.createInputBox(self.exprList[i], i) for i in range(len(self.exprList))]
@@ -53,10 +59,14 @@ class ConsoleWidget(QFrame):
             self.inputListLayout.addWidget(self.labelWidgets[i], i, 0)
             self.inputListLayout.addWidget(self.inputWidgets[i], i, 1)
 
-        self.inputListLayout.setRowStretch(0, 100)
+        self.currentLineId += (len(self.labelList) - 1)
+
+        self.inputListLayout.setRowStretch(len(self.inputWidgets), 100)
 
         self.scrollArea = QScrollArea()
-        self.scrollArea.setLayout(self.inputListLayout)
+        self.inputListWidget.setLayout(self.inputListLayout)
+        self.inputListWidget.setMinimumHeight(40 * len(self.inputWidgets))
+        self.scrollArea.setWidget(self.inputListWidget)
 
         # ~ self.listLayout.addLayout(self.inputListLayout)
         self.listLayout.addWidget(self.scrollArea)
@@ -107,7 +117,7 @@ class ConsoleWidget(QFrame):
         self.inputListLayout.addWidget(newBox, self.currentLineId + 1, 1)
         self.labelWidgets.append(newBtn)
         self.inputWidgets.append(newBox)
-
+        self.inputListWidget.setMinimumHeight(40 * len(self.inputWidgets))
     # self.listLayout.setRowStretch(len(self.labelList) + 1, 10)
     # self.listLayout.update()
     # Map the Model into widgets
@@ -126,18 +136,20 @@ class ConsoleWidget(QFrame):
 
     def createLabelButton(self, label):
         newButton = QPushButton(label)
-        newButton.resize(40, 40)
+        newButton.setMinimumWidth(40)
+        newButton.setMinimumHeight(40)
         self.currentExprNum += 1
         return newButton
 
     def createInputBox(self, content: str, inputId: int):
         currentLineEdit = CustomEditWidget(content, inputId)
-        currentLineEdit.resize(240, 40)
+        currentLineEdit.setMinimumWidth(240)
+        currentLineEdit.setMinimumHeight(35)
         currentLineEdit.inputChangeEvent.connect(self.selectInputBoxChange)
         return currentLineEdit
 
     def selectInputBoxChange(self, lineId):
-        self.currentLineId = lineId
+        print("LINE ID: ", lineId)
         widget: CustomEditWidget = self.inputWidgets[lineId]
         self.exprList[lineId] = widget.text()
         self.drawGraph(self.exprList[lineId], self.labelList[lineId])
