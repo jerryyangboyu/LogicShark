@@ -1,6 +1,10 @@
 # Defines methods to handle files: EXPORT, OPEN, SAVE
 import sys
+from typing import List, Tuple
+
 from PySide6.QtWidgets import QFileDialog, QWidget, QApplication
+import glob
+
 
 class FileReading(QWidget):
     def __init__(self):
@@ -17,36 +21,36 @@ class FileReading(QWidget):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
-        # Method to run
-        self.fileReader()
-
-    #Writing to file
-    def fileReader(self):
+    # Writing to file
+    def getResult(self):
         fileName, _ = QFileDialog.getOpenFileName \
             (self, "Open Files", "", "Expression Files (*.logicshark)")
-        resultList = self._fileReader(fileName)
-        self.result = resultList
+        return self._fileReader(fileName)
 
-    def _fileReader(self, filename):
+    def _fileReader(self, filename) -> Tuple[List, List]:
         try:
             with open(filename, 'r') as f:
                 line = f.readline()
-                result = []
+                labels = []
+                exprs = []
 
                 while line != '':
-                    result.append(line.rstrip())
+                    arr = line.rstrip().split("=")
+                    labels.append(arr[0])
+                    exprs.append(arr[1])
                     line = f.readline()
 
-                return result
+                return labels, exprs
 
         except FileNotFoundError:
-            return []
+            return [], []
+
 
 class FileWriting(QWidget):
-    def __init__(self, exprList):
+    def __init__(self, labelList, exprList):
         super().__init__()
         self.title = 'File Handling'
-        self.exprList = exprList
+        self.toBeSaved = [labelList, exprList]
         self.left = 10
         self.top = 10
         self.width = 640
@@ -60,7 +64,6 @@ class FileWriting(QWidget):
         # Method to run
         self.fileWriter()
 
-
     def fileWriter(self):
         fileName, _ = QFileDialog.getSaveFileName \
             (self, 'Save File', 'default.logicshark', "Expression Files (*.logicshark)")
@@ -70,16 +73,20 @@ class FileWriting(QWidget):
     def _fileWriter(self, filename):
         try:
             with open(filename, 'w') as f:
-                for i in self.exprList:
-                    f.write(str(i) + '\n')
+                for i in range(len(self.toBeSaved[0])):
+                    f.write(self.toBeSaved[0][i] + "=" + self.toBeSaved[1][i] + "\n")
         except FileNotFoundError:
             pass
 
+
 def launchReader():
-    ex = FileReading()
-    return ex.result
-
-def launchWriter(exprList):
-    ex = FileWriting(exprList)
+    return FileReading().getResult()
 
 
+def launchWriter(labelList, exprList):
+    ex = FileWriting(labelList, exprList)
+
+
+def readAllFileWithExtension():
+    r = glob.glob('*.logicshark', recursive=True)
+    print(r)

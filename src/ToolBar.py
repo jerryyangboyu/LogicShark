@@ -5,13 +5,15 @@ from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, Q
     QSizePolicy, QGroupBox, QFileDialog
 
 from algorithm import cnf, dnf, simplify
-from fileHandling import launchReader, launchWriter
+from fileHandling import launchReader, launchWriter, readAllFileWithExtension
 
 
 class ToolBar(QFrame):
 
     ClearScreenCommand = Signal()
     SaveImageCommand = Signal(str)
+    LoadExpressions = Signal(list)
+    SaveExpressions = Signal()
 
     def __init__(self):
         super().__init__()
@@ -86,13 +88,13 @@ class ToolBar(QFrame):
         print("NEW")
 
     def clickedOpenButton(self):
-        result = launchReader()
+        labels, exprs = launchReader()
+        self.LoadExpressions.emit([labels, exprs])
+        print("R:", exprs)
         print("OPEN")
 
     def clickedSaveButton(self):
-        exprList = []
-        # exprList = ['A | B & ~C' for _ in range(21)]
-        launchWriter(exprList)
+        self.SaveExpressions.emit()
         print("SAVE")
 
     def clickedExportButton(self):

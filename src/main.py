@@ -53,6 +53,17 @@ class MainWindow(QMainWindow):
         self.GraphWidget.OnGraphFinished.connect(self.handleGraphFinished)
         self.ConsoleWidget.DrawGraphCommand.connect(self.drawGraphCommand)
         self.ToolbarWidget.SaveImageCommand.connect(self.exportGraph)
+        self.ToolbarWidget.LoadExpressions.connect(self.handleLoadExpressions)
+        self.ToolbarWidget.SaveExpressions.connect(self.handleSaveExpressions)
+
+        # test
+        self.ConsoleWidget.handleExpressionLoaded([["A"], ["B"]])
+
+    def handleSaveExpressions(self):
+        self.ConsoleWidget.SaveExpressions.emit()
+
+    def handleLoadExpressions(self, data):
+        self.ConsoleWidget.ExpressionLoaded.emit(data)
 
     def createMenu(self):
         self.Menu: QMenu = self.menuBar().addMenu("&About")
