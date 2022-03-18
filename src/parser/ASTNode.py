@@ -80,14 +80,16 @@ class ASTGraph:
         item_id = item.node_id
         t = LogicGateType[item.symbolName]
 
-        if self.root is not None and t == LogicGateType.OUTPUT_NODE:
-            raise Exception("You cannot add two root node, error node id: " + str(item_id))
+        if t == LogicGateType.OUTPUT_NODE:
+            if self.root is None:
+                self.root = item
+            else:
+                raise Exception("You cannot add two root node, error node id: " + str(item_id))
 
         if t == LogicGateType.INPUT_NODE or t == LogicGateType.OUTPUT_NODE:
             newNode = LogicSymbolNode(item_id, t, item.label)
         else:
             newNode = LogicSymbolNode(item_id, t, self.generator.genLabel(t))
-        self.root = newNode
 
         # if id exceed, then expand the list
         # note that id increase linearly, so it won't cost much memory
@@ -139,6 +141,9 @@ class ASTGraph:
 
         s1 = self.adjList[item1.node_id]
         s2 = self.adjList[item2.node_id]
+
+        if s1.symbol_type.isSourceNode() or s1.symbol_type.isSourceNode():
+            self.inputNodeNum -= 1
 
         if s1 is None or s2 is None:
             return
@@ -199,15 +204,43 @@ class ASTGraph:
                         q.append(self.G.adjList[w])
                         self.distToSource[w] = self.distToSource[v.node_id] + 1
 
-    # TODO @Qiren Dong, to check whether the graph contains correct expression
-    def checkValid(self) -> bool:
-        # write your code here
-        return True
+    def changeNodeLabel(self, node_id: int, new_label: str):
+        if 0 <= node_id < len(self.adjList) and self.adjList[node_id] is not None:
+            self.adjList[node_id].label = new_label
+
+    def checkValid(self, n: LogicSymbolNode = None) -> bool:
+        if n is None:
+            optionalN = self.findRoot()
+            if optionalN is None:
+                return False
+            n = optionalN
+
+        isValid = True
+
+        # check left tree first
+        if n.leftChild != -1:
+            isValid = self.checkValid(self.adjList[n.leftChild])
+
+        if n.symbol_type != LogicGateType.INPUT_NODE and n.symbol_type != LogicGateType.OUTPUT_NODE:
+            if n.leftChild == -1 or n.rightChild == -1 and (n.symbol_type == LogicGateType.AND or n.symbol_type == LogicGateType.OR):
+                isValid = False
+            if n.leftChild == -1 and n.symbol_type == LogicGateType.NOT:
+                isValid = False
+
+        # check right tree then
+        if n.rightChild != -1:
+            isValid = self.checkValid(self.adjList[n.rightChild])
+
+        return isValid
 
     def toExpression(self) -> ConsoleData:
         data = ConsoleData()
+
+        if not self.checkValid():
+            return data
+
         root = self.findRoot()
-        if root is None:
+        if root is None or root.leftChild == -1:
             return data
 
         self.table: List[List[int]] = []

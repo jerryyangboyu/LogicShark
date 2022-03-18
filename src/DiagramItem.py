@@ -745,9 +745,13 @@ class SourceLogicGateItem(LogicGateItem):
         cursor.clearSelection()
         item.setTextCursor(cursor)
 
-        # If the input label is empty
+        # If the input label is not valid
         if not SourceLogicGateItem.isValidLabel(item.toPlainText()):
             item.setPlainText(self.label)
+
+        # TODO when label change, expression also need change
+        self.scene().ast.changeNodeLabel(self.node_id, item.toPlainText())
+        self.scene().handleGenExpression()
 
         self.label = item.toPlainText()
 

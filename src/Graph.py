@@ -93,12 +93,15 @@ class GraphScene(QGraphicsScene):
         # self.addItem(item2)
         # self.addItem(line)
 
+    def clear(self) -> None:
+        self.ast = ASTGraph()
+        super(GraphScene, self).clear()
+
     def removeItem(self, item: PySide6.QtWidgets.QGraphicsItem) -> None:
         if isinstance(item, LineItem):
             self.ast.removeRelation(item.start_item, item.end_item)
         elif isinstance(item, LogicGateItem):
             self.ast.removeNode(item)
-            self.ast.printRelationship()
         super(GraphScene, self).removeItem(item)
 
     def dragEnterEvent(self, event: PySide6.QtWidgets.QGraphicsSceneDragDropEvent) -> None:
@@ -142,11 +145,12 @@ class GraphScene(QGraphicsScene):
                 self.addItem(graphic_item)
                 self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OUTPUT_NODE.name:
-                graphic_item = SourceLogicGateItem(self.ast.generator.genSymbol(), False)
-                graphic_item.setPos(event.scenePos())
-                graphic_item.setId(self.ast.generator.genNodeId())
-                self.addItem(graphic_item)
-                self.ast.addNode(graphic_item)
+                if self.ast.root is None:
+                    graphic_item = SourceLogicGateItem(self.ast.generator.genSymbol(), False)
+                    graphic_item.setPos(event.scenePos())
+                    graphic_item.setId(self.ast.generator.genNodeId())
+                    self.addItem(graphic_item)
+                    self.ast.addNode(graphic_item)
             elif label_type == LogicGateType.OR.name:
                 graphic_item = ORLogicGateItem()
                 graphic_item.setPos(event.scenePos())
@@ -220,19 +224,24 @@ class GraphScene(QGraphicsScene):
             self.startPos = None
             self.currentLean = None
             self.state = GraphicState.MouseMove
+
+        # if something happens with mouse, then user must do something, sync the expr
+        self.handleGenExpression()
         super(GraphScene, self).mouseReleaseEvent(event)
 
     def connectLogicLine(self, s, l1, e, l2):
-        # self.ast.addRelation(s, l1, e, l2)
-        consoleData = self.ast.toExpression()
-        if consoleData.expression != "":
-            self.parent.postGraphFinished(consoleData)
+        self.ast.addRelation(s, l1, e, l2)
 
     def drawNewLine(self, s, l1, e, l2):
         newLineItem = LineItem(s, l1, e, l2)
         self.addItem(newLineItem)
         newLineItem.show()
         print("is new item in the scene: ", newLineItem in self.items())
+
+    def handleGenExpression(self):
+        consoleData = self.ast.toExpression()
+        if consoleData.expression != "":
+            self.parent.postGraphFinished(consoleData)
 
     def drawGraph(self, expr, label):
         self.clear()
@@ -335,6 +344,7 @@ class GraphWidget(TitleFrame):
         self.GraphScene.clear()
 
     def postGraphFinished(self, consoleData: ConsoleData):
+        print("postGraphFinished(): ", consoleData.expression)
         self.OnGraphFinished.emit(consoleData)
 
     def handleExportCommand(self, location: str):

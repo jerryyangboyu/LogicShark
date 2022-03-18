@@ -11,6 +11,9 @@ class LogicGateItem(Protocol):
 class LogicGateType(Enum):
     AND, OR, NOT, INPUT_NODE, OUTPUT_NODE = range(5)
 
+    def isSourceNode(self):
+        return self.value == LogicGateType.INPUT_NODE.value or self.value == LogicGateType.OUTPUT_NODE.value
+
 
 class NodeType(Enum):
     NoneNode, LeftNode, RightNode, TopNode, INSourceNode, OUTSourceNode = range(6)
