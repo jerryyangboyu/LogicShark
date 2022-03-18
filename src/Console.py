@@ -4,20 +4,41 @@ from PySide6.QtWidgets import QFrame, QWidget, QToolButton, QPushButton, QLineEd
 # ~ from PySide6.QtCore
 from PySide6.QtGui import QIcon
 
-from src.LogicTypes import ConsoleData
-from src.fileHandling import launchWriter
+from LogicTypes import ConsoleData
+from fileHandling import launchWriter
 
 
 class CustomEditWidget(QLineEdit):
     inputChangeEvent = Signal(int)
+    inputEditedEvent = Signal(int)
 
     def __init__(self, content: str, lineEditId: int):
         super().__init__(content)
         self.lineEditId = lineEditId
         self.editingFinished.connect(self.internalFinishHandle)
+        self.textEdited.connect(self.internalChangeHappenHandle)
 
     def internalFinishHandle(self) -> None:
         self.inputChangeEvent.emit(self.lineEditId)
+
+    def internalChangeHappenHandle(self) -> None:
+        self.inputEditedEvent.emit(self.lineEditId)
+
+
+class CustomLabel(QPushButton):
+
+    def __init__(self, label, line_id):
+        super().__init__(label)
+        self.isActive = False
+        self.setBackGround()
+        self.line_id = line_id
+
+    def setActive(self, active: bool):
+        self.isActive = active
+        self.setBackGround()
+
+    def setBackGround(self):
+        self.setStyleSheet("background-color: {0}; border: none; color: white".format("red" if self.isActive else "blue"))
 
 
 class ConsoleWidget(QFrame):
@@ -39,6 +60,8 @@ class ConsoleWidget(QFrame):
         self.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
         self.setAcceptDrops(True)
         # self.setStyleSheet("background-color: #c02c38")
+        self.lineEditWidth = 240
+        self.inputListWidgetLen = 40 * len(self.inputWidgets)
 
         self.currentExprNum = 1
 
@@ -52,13 +75,20 @@ class ConsoleWidget(QFrame):
         self.listLayout = QVBoxLayout()
 
         self.inputListLayout.setContentsMargins(0, 0, 0, 0)
-        self.inputListLayout.setVerticalSpacing(0)
-        self.inputListLayout.setHorizontalSpacing(0)
+        self.inputListLayout.setVerticalSpacing(1)
+        self.inputListLayout.setHorizontalSpacing(1)
 
-        self.labelWidgets = [self.createLabelButton(label) for label in self.labelList]
+        self.labelWidgets = [self.createLabelButton(self.labelList[i], i) for i in range(len(self.labelList))]
         self.inputWidgets = [self.createInputBox(self.exprList[i], i) for i in range(len(self.exprList))]
         # View
-        self.refreshList()
+        for i in range(len(self.labelList)):
+            self.inputListLayout.addWidget(self.labelWidgets[i], i, 0)
+            self.inputListLayout.addWidget(self.inputWidgets[i], i, 1)
+
+        self.currentLineId += (len(self.labelList) - 1)
+
+        self.inputListLayout.setColumnStretch(len(self.inputWidgets), 100)
+        # ~ self.inputListLayout.setRowStretch(0, 10)
 
         self.scrollArea = QScrollArea()
         self.inputListWidget.setLayout(self.inputListLayout)
@@ -70,7 +100,6 @@ class ConsoleWidget(QFrame):
         self.listLayout.addWidget(self.createNewButton())
 
         self.mainLayout.addLayout(self.listLayout)
-        self.translateExpr("A and B")
         self.mainLayout.addWidget(self.truthTable)
 
         self.setLayout(self.mainLayout)
@@ -80,191 +109,102 @@ class ConsoleWidget(QFrame):
         self.ExpressionLoaded.connect(self.handleExpressionLoaded)
         self.SaveExpressions.connect(self.handleSaveExpressions)
 
-    def refreshList(self):
-        print("freshed", self.labelList)
-        self.inputListLayout = QGridLayout()
-        self.inputWidgets = []
-        self.labelWidgets = []
-
-        for i in range(len(self.labelList)):
-            newBtn = self.createLabelButton(self.labelList[i])
-            newBox = self.createInputBox(self.exprList[i], self.currentLineId)
-            self.inputListLayout.addWidget(newBtn, self.currentLineId, 0)
-            self.inputListLayout.addWidget(newBox, self.currentLineId, 1)
-            self.labelWidgets.append(newBtn)
-            self.inputWidgets.append(newBox)
-            self.currentLineId += 1
-
-        self.inputListWidget.setMinimumHeight(40 * len(self.inputWidgets))
-        self.inputListLayout.setRowStretch(self.currentLineId, 100)
-        self.inputListWidget.setLayout(self.inputListLayout)
+    def handleExpressionLoaded(self, data):
+        print(data[0], data[1])
 
     def handleSaveExpressions(self):
-        launchWriter(self.labelList, self.exprList)
+        launchWriter([], [])
 
-    def handleExpressionLoaded(self, data):
-        self.labelList = data[0]
-        self.exprList = data[1]
-        self.refreshList()
+    def changeExpr(self, line_id: int, expr: str):
+        self.inputWidgets[line_id].setText(expr)
+        self.exprList[line_id] = expr
+
+    def changeActiveLineId(self, line_id: int):
+        self.currentExprNum = line_id
+        for widget in self.labelWidgets:
+            if widget.line_id == self.currentExprNum:
+                widget.setActive(True)
+            widget.setActive(False)
 
     def handleGraphComplete(self, consoleData: ConsoleData):
-        print("in console")
-        print(consoleData.truthTable)
+        # ~ print("in console")
+        # ~ print(consoleData.truthTable)
+
+        # evil code
+
+        self.changeExpr(self.currentExprNum, consoleData.expression)
+
+        # save code
+        self.truthTable.setColumnCount(len(consoleData.truthTable))
+        self.truthTable.setRowCount(len(consoleData.truthTable[0]))
+        # ~ layout.addWidget(button2)
+
+        for i in range(len(consoleData.truthTable)):
+            for j in range(len(consoleData.truthTable[0])):
+                # ~ print (consoleData.truthTable[i][j])
+                item = QTableWidgetItem()
+                item.setText(str(consoleData.truthTable[i][j]))
+                # ~ tmplayout.addWidget(item)
+                self.truthTable.setItem(j, i, item)
 
     def drawGraph(self, expr: str, label: str):
         self.DrawGraphCommand.emit([expr, label])
 
     def addRecord(self, label):
-        newBtn = self.createLabelButton(label)
+        newBtn = self.createLabelButton(label, self.currentLineId)
         newBox = self.createInputBox(self.exprList[-1], self.currentLineId)
-        self.inputListLayout.addWidget(newBtn, self.currentLineId, 0)
-        self.inputListLayout.addWidget(newBox, self.currentLineId, 1)
+        self.inputListLayout.addWidget(newBtn, self.currentLineId + 1, 0)
+        self.inputListLayout.addWidget(newBox, self.currentLineId + 1, 1)
         self.labelWidgets.append(newBtn)
         self.inputWidgets.append(newBox)
         self.inputListWidget.setMinimumHeight(40 * len(self.inputWidgets))
 
     def newInputBoxEvent(self):
         # ~ self.currentExprNum += 1
+        self.currentLineId += 1
         label = chr(ord(self.labelList[-1]) + 1)
         self.labelList.append(label)
         self.exprList.append("A & B")
         self.addRecord(label)
-        self.currentLineId += 1
 
-    def createLabelButton(self, label):
-        newButton = QPushButton(label)
-        newButton.setFlat(True)
+    def createLabelButton(self, label, line_id):
+        newButton = CustomLabel(label, line_id)
+        newButton.setFlat(False)
         newButton.setMinimumWidth(40)
         newButton.setMinimumHeight(40)
-        self.currentExprNum += 1
+        newButton.setMaximumWidth(40)
+        newButton.setMaximumHeight(40)
         return newButton
 
     def createInputBox(self, content: str, inputId: int):
         currentLineEdit = CustomEditWidget(content, inputId)
         currentLineEdit.setMinimumWidth(240)
-        currentLineEdit.setMinimumHeight(35)
+        currentLineEdit.setMinimumHeight(38)
+        currentLineEdit.setTextMargins(2, 4, 4, 2)
         currentLineEdit.inputChangeEvent.connect(self.selectInputBoxChange)
+        currentLineEdit.inputEditedEvent.connect(self.selectInputBoxEdited)
         return currentLineEdit
 
     def selectInputBoxChange(self, lineId):
-        print("LINE ID: ", lineId)
+        # ~ print("LINE ID: ", lineId)
         widget: CustomEditWidget = self.inputWidgets[lineId]
         self.exprList[lineId] = widget.text()
         self.drawGraph(self.exprList[lineId], self.labelList[lineId])
+        self.changeActiveLineId(lineId)
+
+    def selectInputBoxEdited(self, lineId):
+        print("LINE ID: ", lineId)
+        self.inputListWidget.setMinimumWidth(300000)
+        widget: CustomEditWidget = self.inputWidgets[lineId]
+        if len(widget.text()) > 20:
+            print(len(widget.text()), self.lineEditWidth)
+            # ~ self.inputWidgets[lineId].setMaximumWidth(self.lineEditWidth+20)
+            self.lineEditWidth = self.lineEditWidth + 4
+            self.inputWidgets[lineId].setMinimumWidth(self.lineEditWidth)
+        self.changeActiveLineId(lineId)
 
     def createNewButton(self):
         newButton = QPushButton('+')
         newButton.resize(40, 40)
         newButton.clicked.connect(self.newInputBoxEvent)
         return newButton
-
-    # ~ self.newButton.clicked.connect(self.plusButtonHandle)
-
-    def translateExpr(self, text):
-        a = text.split(" ")
-        unit1 = UnitExprssion(None, None, a[0])
-        unit0 = UnitExprssion([None, None, a[0]], a[1], a[2])
-        LE0 = LinkedExpression(unit1)
-        LE0.append(unit0)
-        self.createTruthTable(LE0)
-
-    # ~ return a
-
-    # ~ for i in text:
-    # ~ if i.isAlpha() and
-
-    def createTruthTable(self, Exprs):
-        column = Exprs.length()
-        row = 2 ** Exprs.elemntsNumber() + 1
-        # ~ print (row)
-        self.truthTable = QTableWidget(row, column + row - 1 + 1, self)
-        # self.truethTable.move(self.lEXcord + self.space + self.buttonSize[0] * 6, self.bottonPosition[1])
-        self.mapTable(Exprs, row, column)
-
-    def mapTable(self, Exprs, row, column):
-        item = QTableWidgetItem()
-        elmts = Exprs.elemnts()
-        for i in range(len(elmts)):
-            item.setText(elmts[i])
-            self.truthTable.setItem(0, i + 1, item)
-        # ~ for i in range(column):
-        item.setText("A && B")
-
-        self.truthTable.setItem(3, 0, item)
-
-
-class UnitExprssion():
-    def __init__(self, A=None, operator=None, B=None):
-        self.operator = operator
-        self.A = A
-        self.B = B
-
-    def isValue(self):
-        return not self.operator
-
-    def setValue(self, val):
-        if self.A == None:
-            self.A = val
-        elif self.operator == None:
-            self.operator = val
-        else:
-            self.B = val
-
-    def __str__(self):
-        return self.A + " " + self.operator + " " + self.B
-
-    def setA(self, A):
-        self.A = A
-
-    def setOperator(self, A):
-        self.operator = A
-
-    def setB(self, A):
-        self.B = A
-
-
-class LinkedExpression():
-    def __init__(self, unit=None, up=None, down=None):
-        self.up = up
-        self.val = unit
-        self.down = down
-
-    def append(self, downNode):
-
-        if not self.down:
-            downNode = LinkedExpression(downNode)
-            self.down = downNode
-            self.down.up = self
-        else:
-            self.down.append(downNode)
-
-    # ~ def pop(self):
-    # ~ self.down.up = None
-    # ~ return self.val
-
-    # ~ def setValue(self,val):
-    # ~ self.val = val
-
-    # ~ def createNewNode(self):
-    # ~ return LinkedExpression()
-
-    def length(self, sum=0):
-        sum += 1
-        if self.down:
-            return self.down.length(sum)
-
-        return sum
-
-    def elemntsNumber(self, elms=[]):
-
-        elms.append(self.val.B)
-        if self.down:
-            return self.down.elemntsNumber()
-        return len(set(elms))
-
-    def elemnts(self, elms=[]):
-
-        elms.append(self.val.B)
-        if self.down:
-            return self.down.elemnts()
-        return list(set(elms))
