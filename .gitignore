@@ -4,3 +4,6 @@ venv
 *.spec
 .idea
 src/widgets
+*.mov
+*.pptx
+*.docx
