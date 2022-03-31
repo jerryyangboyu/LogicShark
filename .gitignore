@@ -7,3 +7,4 @@ src/widgets
 *.mov
 *.pptx
 *.docx
+.DS_Store
