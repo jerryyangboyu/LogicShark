@@ -10,7 +10,7 @@ from DiagramItem import LogicGateItem, ANDLogicGateItem, ORLogicGateItem, NOTLog
     SourceLogicGateItem
 
 from enum import Enum
-from src.parser.ASTNode import ASTGraph
+from parser.ASTNode import ASTGraph
 from LogicTypes import LogicGateType, NodeType, ConsoleData
 
 

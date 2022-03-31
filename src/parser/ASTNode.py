@@ -1,7 +1,7 @@
 from random import randint
-from typing import List, Tuple
+from typing import List
 
-from ..LogicTypes import LogicGateItem, LogicGateType, NodeType, ConsoleData
+from LogicTypes import LogicGateItem, LogicGateType, NodeType, ConsoleData
 
 
 class Generator:

@@ -6,7 +6,7 @@ from PySide6.QtGui import QIcon
 
 from LogicTypes import ConsoleData
 from fileHandling import launchWriter
-from src.algorithm import cnf, dnf, simplify
+from algorithm import cnf, dnf, simplify
 
 
 class CustomEditWidget(QLineEdit):
