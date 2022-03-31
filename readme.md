@@ -57,5 +57,10 @@ wheel                     0.36.2
 
 Quickly produce one-file executable program (Pass test under macOS platform)
 ```shell
-pyinstaller src/appDemo.py --onefile --windowed
+pyinstaller src/main.py --onefile --windowed
+```
+
+Run python python
+```shell
+python3 src/main.py
 ```
