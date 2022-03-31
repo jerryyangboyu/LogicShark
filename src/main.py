@@ -8,7 +8,7 @@ import Component
 import Console
 import Graph
 import ToolBar
-from src.LogicTypes import ConsoleData
+from LogicTypes import ConsoleData
 
 
 class MainWindow(QMainWindow):
